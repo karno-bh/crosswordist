@@ -82,24 +82,3 @@ class CompressedBitmap:
 
     def __init__(self, bit_sequence):
         super().__init__()
-
-
-def test001():
-    r = compress(bytearray.fromhex('010203040506FFFFFFFFFFFFFF'))
-    print(r)
-
-    r = compress(bytearray.fromhex('00 00 00 00 00 0F 0F 0F 0F FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF'))
-    print([hex(b) for b in r])
-
-    t = '00' * (8191 * 2 + 8190)
-    r = compress(bytearray.fromhex(t))
-    print([bin(b) for b in r])
-    print([hex(b) for b in r])
-
-
-def main():
-    test001()
-
-
-if __name__ == '__main__':
-    main()
