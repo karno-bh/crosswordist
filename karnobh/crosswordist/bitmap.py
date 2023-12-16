@@ -28,7 +28,7 @@ def compress(bit_sequence: bytearray):
                 del noise_bytes[:16383]  # does performance suffer?..
             else:
                 if nb_cnt > 63:
-                    noise_seq_control_bytes = (0xC000 | nb_cnt).to_bytes(2, 'big')
+                    noise_seq_control_bytes = (0xC000 | nb_cnt).to_bytes(2,'big')
                 else:
                     noise_seq_control_bytes = (0x80 | nb_cnt).to_bytes(1, 'big')
                 compressed_seq.extend(noise_seq_control_bytes)
@@ -41,13 +41,15 @@ def compress(bit_sequence: bytearray):
         while fb_cnt:
             if fb_cnt > 8191:
                 fill_seq_control_bytes = 0x3FFF | (fill_bit << 14)
-                compressed_seq.extend(fill_seq_control_bytes.to_bytes(2, 'big'))
+                compressed_seq.extend(fill_seq_control_bytes.to_bytes(2,
+                                                                      'big'))
                 fb_cnt -= 8191
             else:
                 if fb_cnt > 31:
                     fill_seq_control_bytes = ((0x2000 | (fill_bit << 14)) | fb_cnt).to_bytes(2, 'big')
                 else:
-                    fill_seq_control_bytes = ((fill_bit << 6) | fb_cnt).to_bytes(1, 'big')
+                    fill_seq_control_bytes = ((fill_bit << 6) | fb_cnt).to_bytes(1,
+                                                                                 'big')
                 compressed_seq.extend(fill_seq_control_bytes)
                 fb_cnt -= fb_cnt
 
