@@ -1,4 +1,4 @@
-
+from enum import Enum
 """
 Encoding Scheme:
 
@@ -13,7 +13,7 @@ Encoding Scheme:
 """
 
 
-def compress(bit_sequence: bytearray):
+def compress(byte_sequence):
     fill_byte_type = 0
     fill_byte_count = 0
     noise_bytes = bytearray()
@@ -53,7 +53,7 @@ def compress(bit_sequence: bytearray):
                 compressed_seq.extend(fill_seq_control_bytes)
                 fb_cnt -= fb_cnt
 
-    for byte in bit_sequence:
+    for byte in byte_sequence:
         if byte == 0x00 or byte == 0xFF:
             if noise_bytes:
                 emmit_noise_bytes()
@@ -80,5 +80,47 @@ def compress(bit_sequence: bytearray):
 
 class CompressedBitmap:
 
-    def __init__(self, bit_sequence):
+    FILL_TYPES = [0x00, 0xFF]
+
+    def __init__(self, byte_sequence):
         super().__init__()
+        self._uncompressed_len = len(byte_sequence)
+        self._compressed_seq = compress(byte_sequence)
+        self._compress_ratio = self._uncompressed_len / len(self._compressed_seq)
+
+    @property
+    def compressed_ratio(self):
+        return self._compress_ratio
+
+    def __iter__(self):
+        seq = self._compressed_seq
+        fill_types = self.FILL_TYPES
+        byte_index = 0
+        while byte_index < len(seq):
+            byte = seq[byte_index]
+            is_noise = byte >> 7
+            if is_noise:
+                noise_bytes_cnt = byte & 0x3F
+                is_long = (byte >> 6) & 1
+                if is_long:
+                    byte_index += 1
+                    noise_bytes_cnt = (noise_bytes_cnt << 8) | seq[byte_index]
+                byte_index += 1  # first noise byte in noise sequence
+                first_non_noise_byte_idx = byte_index + noise_bytes_cnt
+                while byte_index < first_non_noise_byte_idx:
+                    yield seq[byte_index]
+                    byte_index += 1
+            else:
+                # fill sequence
+                fill_type = fill_types[byte >> 6]  # no need for masking, MSB is zero
+                fill_bytes_cnt = byte & 0x1F
+                is_long = (byte >> 5) & 1
+                if is_long:
+                    byte_index += 1
+                    fill_bytes_cnt = (fill_bytes_cnt << 8) | seq[byte_index]
+                for _ in range(fill_bytes_cnt):
+                    yield fill_type
+                byte_index += 1
+
+
+
