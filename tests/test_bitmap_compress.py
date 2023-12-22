@@ -1,5 +1,5 @@
 import unittest
-from karnobh.crosswordist.bitmap import compress, CompressedBitmap
+from karnobh.crosswordist.bitmap import compress, CompressedBitmap, bit_index
 
 
 class MyTestCase(unittest.TestCase):
@@ -32,6 +32,19 @@ class MyTestCase(unittest.TestCase):
             uncompressed.append(b)
         self.assertEqual(uncompressed, original)
 
+    def test_bit_index_simple(self):
+        t = '00000000000000000000000088'
+        byte_seq = bytearray.fromhex(t)
+        expected = [96, 100]
+        actual = [bi for bi in bit_index(byte_seq)]
+        self.assertEqual(expected, actual)
+
+    def test_bit_index_generic(self):
+        t = 'FF' * 32
+        byte_seq = bytearray.fromhex(t)
+        expected = [n for n in range(32 * 8)]
+        actual = [bi for bi in bit_index(byte_sequence=byte_seq)]
+        self.assertEqual(expected, actual)
 
 if __name__ == '__main__':
     unittest.main()

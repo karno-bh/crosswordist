@@ -122,5 +122,8 @@ class CompressedBitmap:
                     yield fill_type
                 byte_index += 1
 
-
-
+def bit_index(byte_sequence):
+    for byte_index, byte in enumerate(byte_sequence):
+        for bit_num in range(7, -1, -1):
+            if (byte >> bit_num) & 1:
+                yield byte_index * 8 + (7 - bit_num)
