@@ -45,6 +45,3 @@ class MyTestCase(unittest.TestCase):
         expected = [n for n in range(32 * 8)]
         actual = [bi for bi in bit_index(byte_sequence=byte_seq)]
         self.assertEqual(expected, actual)
-
-if __name__ == '__main__':
-    unittest.main()

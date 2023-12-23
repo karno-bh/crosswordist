@@ -2,48 +2,61 @@
 
 import subprocess
 import sys
-import logging
 
-logger = logging.getLogger(__name__)
 this_module = sys.modules[__name__]
 
 
-def tests():
-    logger.info("Running tests")
-    result = subprocess.run("python -m unittest", shell=True)
-    if result.returncode != 0:
-        logger.error("Tests failed")
-        exit(1)
-    logger.info("Test passed")
+def r(cli):
+    return subprocess.run(cli, shell=True)
 
 
-def coverage():
-    logger.warning("Coverage should be implemented")
+def action_start(text):
+    print("===>", text)
 
 
-def linter():
-    logger.info("Running linter")
-    result = subprocess.run("python -m flake8 karnobh/", shell=True)
-    if result.returncode != 0:
-        logger.error("Linter failed")
-        # exit(1)
-    logger.info("Linter passed")
+def action_end(text):
+    print("<===", text)
 
 
-def build():
-    linter()
-    tests()
-    coverage()
+def action_tests():
+    action_start("Running Tests")
+    r("python -m coverage run -m unittest")
+    action_end("Test passed")
+
+
+def action_coverage():
+    action_start("Running coverage")
+    r("python -m coverage report -m")
+    action_end("Coverage passed")
+
+
+def action_linter():
+    action_start("Running linter")
+    r("python -m flake8 karnobh/")
+    action_end("Linter passed")
+
+
+def action_install_req():
+    action_start("Install Requirements")
+    r("python -m pip install -r dev_requirements.txt")
+    action_end("Installing requirements passed")
+
+
+def action_build():
+    action_install_req()
+    action_linter()
+    action_tests()
+    action_coverage()
 
 
 def main():
     if len(sys.argv) < 2:
-        logger.error("Action should be specified")
-        exit(1)
-    action_str = sys.argv[1]
-    action = getattr(this_module, action_str, None)
+        action_str = "build"
+    else:
+        action_str = sys.argv[1]
+    action = getattr(this_module, f"action_{action_str}", None)
     if action is None:
-        logger.error(f"Cannot find action: %s", action_str)
+        print(f"Cannot find action: {action_str}")
         exit(1)
     action()
 

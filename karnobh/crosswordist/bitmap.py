@@ -1,4 +1,5 @@
-from enum import Enum
+import operator
+import functools
 """
 Encoding Scheme:
 
@@ -28,7 +29,7 @@ def compress(byte_sequence):
                 del noise_bytes[:16383]  # does performance suffer?..
             else:
                 if nb_cnt > 63:
-                    noise_seq_control_bytes = (0xC000 | nb_cnt).to_bytes(2,'big')
+                    noise_seq_control_bytes = (0xC000 | nb_cnt).to_bytes(2, 'big')
                 else:
                     noise_seq_control_bytes = (0x80 | nb_cnt).to_bytes(1, 'big')
                 compressed_seq.extend(noise_seq_control_bytes)
@@ -122,8 +123,34 @@ class CompressedBitmap:
                     yield fill_type
                 byte_index += 1
 
+
 def bit_index(byte_sequence):
     for byte_index, byte in enumerate(byte_sequence):
         for bit_num in range(7, -1, -1):
             if (byte >> bit_num) & 1:
                 yield byte_index * 8 + (7 - bit_num)
+
+
+class MakeOpError(Exception):
+    pass
+
+
+class NotEnoughSequencesError(Exception):
+    pass
+
+
+def make_op_all(op=None):
+    if op is None:
+        raise MakeOpError("Operator is not defined")
+
+    def op_all(*byte_sequences):
+        if len(byte_sequences) < 2:
+            raise NotEnoughSequencesError("Not enough byte sequences")
+        for main_byte, *other_bytes in zip(*byte_sequences):
+            yield functools.reduce(op, other_bytes, main_byte)
+
+    return op_all
+
+
+and_all = make_op_all(op=operator.and_)
+or_all = make_op_all(op=operator.or_)
