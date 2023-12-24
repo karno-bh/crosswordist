@@ -13,7 +13,7 @@ class MyTestCase(unittest.TestCase):
     def test_something(self):
         logger.warning("Hello from logger of tests")
         wi = WordsIndex()
-        wi.add_line()
+        wi.add_word()
         self.assertEqual(True, True)  # add assertion here
 
 

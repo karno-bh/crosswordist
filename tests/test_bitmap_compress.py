@@ -1,5 +1,5 @@
 import unittest
-from karnobh.crosswordist.bitmap import compress, CompressedBitmap, bit_index
+from karnobh.crosswordist.bitmap import compress, CompressedBitmap, bit_index, bool_to_byte_bits_seq
 
 
 class MyTestCase(unittest.TestCase):
@@ -44,4 +44,17 @@ class MyTestCase(unittest.TestCase):
         byte_seq = bytearray.fromhex(t)
         expected = [n for n in range(32 * 8)]
         actual = [bi for bi in bit_index(byte_sequence=byte_seq)]
+        self.assertEqual(expected, actual)
+
+    def test_bool_to_byte_bits_seq(self):
+        l = [0, 0, 0, 0, 0, 0, 0, 0,
+             1, 1, 1, 1, 1, 1, 1, 1,
+             0, 0, 0, 0, 1, 1, 1, 1,
+             0, 0, 0, 0, 1, 1, 1, 1,
+             1, 1, 1, 0]
+        # l = [0, 0, 0, 0, 0, 0, 0, 1,
+        #      1, 1, 1, 0, 1]
+        bytes_seq = bool_to_byte_bits_seq(l)
+        expected = [0x0, 0xff, 0xf, 0xf, 0xe0]
+        actual = [b for b in bytes_seq]
         self.assertEqual(expected, actual)

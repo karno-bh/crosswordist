@@ -154,3 +154,16 @@ def make_op_all(op=None):
 
 and_all = make_op_all(op=operator.and_)
 or_all = make_op_all(op=operator.or_)
+
+
+def bool_to_byte_bits_seq(seq):
+    r, cnt = 0, 0
+    for v in seq:
+        r |= bool(v)
+        cnt += 1
+        if cnt == 8:
+            yield r
+            r, cnt = 0, 0
+        else:
+            r <<= 1
+    yield r << (7 - cnt)
