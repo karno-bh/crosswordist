@@ -38,10 +38,6 @@ class WordsIndexSameLen:
         self._words.append(word)
         return True
 
-    def _get_letter_stream_at_word_index(self, index):
-        for w in self._words:
-            yield w[index]
-
     def make_index(self):
         self._words.sort()
         self._bitmap_index = []
@@ -52,7 +48,7 @@ class WordsIndexSameLen:
                     byte_sequence=bool_to_byte_bits_seq(
                         map(
                             lambda _l: _l == abc_letter,
-                            self._get_letter_stream_at_word_index(i)
+                            (w[i] for w in self._words)
                         )
                     )
                 )
