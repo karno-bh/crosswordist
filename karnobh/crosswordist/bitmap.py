@@ -85,13 +85,13 @@ class CompressedBitmap:
 
     def __init__(self, byte_sequence):
         super().__init__()
-        self._uncompressed_len = len(byte_sequence)
+        # self._uncompressed_len = len(byte_sequence)
         self._compressed_seq = compress(byte_sequence)
-        self._compress_ratio = self._uncompressed_len / len(self._compressed_seq)
+        # self._compress_ratio = self._uncompressed_len / len(self._compressed_seq)
 
-    @property
-    def compressed_ratio(self):
-        return self._compress_ratio
+    # @property
+    # def compressed_ratio(self):
+    #     return self._compress_ratio
 
     def __iter__(self):
         seq = self._compressed_seq

@@ -36,3 +36,6 @@ class MyTestCase(unittest.TestCase):
     def test_raising_not_make_op_error(self):
         self.assertRaises(MakeOpError, make_op_all, None)
 
+    def test_make_op_not_enough_sequences_and_or(self):
+        self.assertRaises(NotEnoughSequencesError, lambda: [b for b in and_all(self.compressed_seqs[0])])
+        self.assertRaises(NotEnoughSequencesError, lambda: [b for b in or_all(self.compressed_seqs[0])])
