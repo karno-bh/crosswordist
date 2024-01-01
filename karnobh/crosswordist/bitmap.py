@@ -136,7 +136,6 @@ class CompressedBitmap2:
             self._compressed_byte_index = 0
             self._is_noise = None
             self._fill_type = None
-            self._bytes_count = 0
             self._remaining_bytes = 0
             self._read_control_byte()
             self._stop_on_next_iter = False
@@ -154,21 +153,21 @@ class CompressedBitmap2:
             byte = self._compressed_seq[self._compressed_byte_index]
             self._is_noise = byte >> 7
             if self._is_noise:
-                self._bytes_count = byte & 0x3F
+                bytes_count = byte & 0x3F
                 is_long = (byte >> 6) & 1
                 if is_long:
                     self._compressed_byte_index += 1
-                    self._bytes_count = (self._bytes_count << 8) | self._compressed_seq[self._compressed_byte_index]
+                    bytes_count = (bytes_count << 8) | self._compressed_seq[self._compressed_byte_index]
                 self._compressed_byte_index += 1
             else:
                 self._fill_type = FILL_TYPES[byte >> 6]
-                self._bytes_count = byte & 0x1F
+                bytes_count = byte & 0x1F
                 is_long = (byte >> 5) & 1
                 if is_long:
                     self._compressed_byte_index += 1
-                    self._bytes_count = (self._bytes_count << 8) | self._compressed_seq[self._compressed_byte_index]
+                    bytes_count = (bytes_count << 8) | self._compressed_seq[self._compressed_byte_index]
                 self._compressed_byte_index += 1
-            self._remaining_bytes = self._bytes_count
+            self._remaining_bytes = bytes_count
 
         def seek(self, bytes_to_seek):
             while self._remaining_bytes < bytes_to_seek:
@@ -283,4 +282,3 @@ def bool_to_byte_bits_seq(seq):
         else:
             r <<= 1
     yield r << (7 - cnt)
-
