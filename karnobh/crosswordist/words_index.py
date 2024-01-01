@@ -3,7 +3,7 @@ from contextlib import contextmanager
 import logging
 
 
-from karnobh.crosswordist.bitmap import CompressedBitmap, bool_to_byte_bits_seq
+from karnobh.crosswordist.bitmap import CompressedBitmap2, bool_to_byte_bits_seq
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,7 @@ class WordsIndexSameLen:
         for i in range(self._length):
             letter_index = dict()
             for abc_letter in self._abc:
-                abc_letter_bitmap = CompressedBitmap(
+                abc_letter_bitmap = CompressedBitmap2(
                     byte_sequence=bool_to_byte_bits_seq(
                         map(
                             lambda _l: _l == abc_letter,

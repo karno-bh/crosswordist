@@ -1,10 +1,11 @@
 import unittest
+import operator
 
 from karnobh.crosswordist.bitmap import (and_all, or_all, CompressedBitmap, make_op_all, MakeOpError,
-                                         NotEnoughSequencesError)
+                                         NotEnoughSequencesError, bit_op_index2, CompressedBitmap2)
 
 
-class MyTestCase(unittest.TestCase):
+class BitmapOpsTestCase(unittest.TestCase):
 
     def setUp(self):
         t = ['00ff00ff00ff',
@@ -39,3 +40,16 @@ class MyTestCase(unittest.TestCase):
     def test_make_op_not_enough_sequences_and_or(self):
         self.assertRaises(NotEnoughSequencesError, lambda: [b for b in and_all(self.compressed_seqs[0])])
         self.assertRaises(NotEnoughSequencesError, lambda: [b for b in or_all(self.compressed_seqs[0])])
+
+
+class CompressedBitmapOpsTestCase(unittest.TestCase):
+
+    def test_simple_seek(self):
+        t = ['000000ff00ff',
+             '00000ff00f00',
+             '0000f0f0f000']
+        self.seqs = [bytearray.fromhex(seq_str) for seq_str in t]
+        self.compressed_seqs = [CompressedBitmap2(bs) for bs in self.seqs]
+        expected = [24, 25, 26, 27]
+        actual =  [x for x in bit_op_index2(*self.compressed_seqs, op=operator.and_)]
+        self.assertEqual(expected, actual)

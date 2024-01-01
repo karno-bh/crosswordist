@@ -1,3 +1,5 @@
+import operator
+
 import karnobh.crosswordist.log_config as log_config
 log_config.set_logger()
 
@@ -5,13 +7,13 @@ import unittest
 import logging
 
 from karnobh.crosswordist.bitmap import and_all
-from karnobh.crosswordist.bitmap import bit_index
+from karnobh.crosswordist.bitmap import bit_index, bit_op_index2
 from karnobh.crosswordist.words_index import WordsIndexSameLen
 
 logger = logging.getLogger(__name__)
 
 
-class MyTestCase(unittest.TestCase):
+class WordIndexTestCase(unittest.TestCase):
 
     def setUp(self):
         super().setUp()
@@ -46,6 +48,14 @@ class MyTestCase(unittest.TestCase):
             for w in self.words:
                 wi.add_word(w)
         actual = [wi[n] for n in bit_index(and_all(wi[2:'A'], wi[0:'B']))]
+        expected = ["BAA"]
+        self.assertEqual(expected, actual)
+
+    def test_word_with_lang_features_bit_op2(self):
+        with WordsIndexSameLen.as_context(3) as wi:
+            for w in self.words:
+                wi.add_word(w)
+        actual = [wi[n] for n in bit_op_index2(wi[2:'A'], wi[0:'B'], op=operator.and_)]
         expected = ["BAA"]
         self.assertEqual(expected, actual)
 

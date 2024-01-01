@@ -1,8 +1,8 @@
 import unittest
-from karnobh.crosswordist.bitmap import compress, CompressedBitmap, bit_index, bool_to_byte_bits_seq
+from karnobh.crosswordist.bitmap import compress, CompressedBitmap, CompressedBitmap2, bit_index, bool_to_byte_bits_seq
 
 
-class MyTestCase(unittest.TestCase):
+class CompressedBitmapTestCase(unittest.TestCase):
 
     def test_simple_compress(self):
         t = '00' * (8191 * 2 + 8190)
@@ -58,3 +58,42 @@ class MyTestCase(unittest.TestCase):
         expected = [0x0, 0xff, 0xf, 0xf, 0xe0]
         actual = [b for b in bytes_seq]
         self.assertEqual(expected, actual)
+
+    def test_compressed_bitmap_seek_by_iteration(self):
+        t = '8888FFFF44440000FFFF88'
+        byte_seq = bytearray.fromhex(t)
+        actual = bytearray()
+        for x in CompressedBitmap2(byte_sequence=byte_seq):
+            actual.append(x)
+        self.assertEqual(byte_seq, actual)
+
+    def test_compressed_bitmap_seek_simple(self):
+        t = '8888FFFF44440000FFFF88'
+        byte_seq = bytearray.fromhex(t)
+        i = iter(CompressedBitmap2(byte_sequence=byte_seq))
+        actual = next(i)
+        self.assertEqual(0x88, actual)
+        i.seek(3)
+        actual = next(i)
+        self.assertEqual(0x44, actual)
+
+    def test_seekable_bytes(self):
+        t = '000000008888'
+        byte_seq = bytearray.fromhex(t)
+        bm = CompressedBitmap2(byte_sequence=byte_seq)
+        i = iter(bm)
+        # print(i.seekable_bytes)
+        actual_seekable_bytes = i.seekable_bytes
+        self.assertEqual(4, actual_seekable_bytes)
+        next(i)
+        # print(i.seekable_bytes)
+        actual_seekable_bytes = i.seekable_bytes
+        self.assertEqual(3, actual_seekable_bytes)
+        i.seek(i.seekable_bytes)
+        # print(next(i))
+        # print(next(i))
+        expected_last_vals = [0x88, 0x88]
+        actual_last_vals = [next(i), next(i)]
+        self.assertEqual(expected_last_vals, actual_last_vals)
+
+
