@@ -96,4 +96,33 @@ class CompressedBitmapTestCase(unittest.TestCase):
         actual_last_vals = [next(i), next(i)]
         self.assertEqual(expected_last_vals, actual_last_vals)
 
+    def test_long_sequences_seekable_bytes(self):
+        t = '00' * 8191
+        for x in range(0, 20000, 500):
+            tt = t + '88' * x
+            bm = CompressedBitmap2(byte_sequence=bytearray.fromhex(tt))
+            i = iter(bm)
+            i.seek(i.seekable_bytes)
+            cnt = 0
+            while next(i,None) is not None:
+                cnt += 1
+            self.assertEqual(x, cnt)
 
+    def test_long_sequences_seekable_bytes_mix(self):
+        t = '00' * 8191
+        for x in range(0, 20000, 500):
+            tt = t + '88' * x + t + '88' * x
+            bm = CompressedBitmap2(byte_sequence=bytearray.fromhex(tt))
+            i = iter(bm)
+            i.seek(i.seekable_bytes)
+            cnt = 0
+            while i.seekable_bytes == 0:
+                next(i)
+                cnt += 1
+            i.seek(i.seekable_bytes)
+            while i.seekable_bytes == 0:
+                el = next(i, None)
+                if el is None:
+                    break
+                cnt += 1
+            self.assertEqual(x * 2, cnt)

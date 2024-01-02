@@ -2,7 +2,8 @@ import unittest
 import operator
 
 from karnobh.crosswordist.bitmap import (and_all, or_all, CompressedBitmap, make_op_all, MakeOpError,
-                                         NotEnoughSequencesError, bit_op_index2, CompressedBitmap2)
+                                         NotEnoughSequencesError, bit_op_index2, CompressedBitmap2,
+                                         UnsupportedOperator)
 
 
 class BitmapOpsTestCase(unittest.TestCase):
@@ -51,5 +52,17 @@ class CompressedBitmapOpsTestCase(unittest.TestCase):
         self.seqs = [bytearray.fromhex(seq_str) for seq_str in t]
         self.compressed_seqs = [CompressedBitmap2(bs) for bs in self.seqs]
         expected = [24, 25, 26, 27]
-        actual =  [x for x in bit_op_index2(*self.compressed_seqs, op=operator.and_)]
+        actual = [x for x in bit_op_index2(*self.compressed_seqs, op=operator.and_)]
         self.assertEqual(expected, actual)
+
+    def test_seekable_seq_exceptions(self):
+        t = ['00' * 8191,
+             'FF' * 8191]
+        seqs = [bytearray.fromhex(seq_str) for seq_str in t]
+        compressed_seqs = [CompressedBitmap2(bs) for bs in seqs]
+        self.assertRaises(MakeOpError, lambda: [x for x in bit_op_index2(*compressed_seqs)])
+        self.assertRaises(NotEnoughSequencesError,
+                          lambda: [x for x in bit_op_index2(compressed_seqs[0],
+                                                            op=operator.and_)])
+        self.assertRaises(UnsupportedOperator, lambda: [x for x in bit_op_index2(*compressed_seqs,
+                                                                                 op=operator.xor)])

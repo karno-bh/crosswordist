@@ -87,11 +87,6 @@ class CompressedBitmap:
     def __init__(self, byte_sequence):
         super().__init__()
         self._compressed_seq = compress(byte_sequence)
-        self._seekable_bytes = 0
-
-    @property
-    def seekable_bytes(self):
-        return self._seekable_bytes
 
     def __iter__(self):
         seq = self._compressed_seq
@@ -101,7 +96,6 @@ class CompressedBitmap:
             byte = seq[byte_index]
             is_noise = byte >> 7
             if is_noise:
-                self._seekable_bytes = 0
                 noise_bytes_cnt = byte & 0x3F
                 is_long = (byte >> 6) & 1
                 if is_long:
@@ -121,7 +115,6 @@ class CompressedBitmap:
                     byte_index += 1
                     fill_bytes_cnt = (fill_bytes_cnt << 8) | seq[byte_index]
                 for i in range(fill_bytes_cnt):
-                    self._seekable_bytes = fill_bytes_cnt - i - 1
                     yield fill_type
                 byte_index += 1
 

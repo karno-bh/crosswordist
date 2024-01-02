@@ -45,10 +45,7 @@ class WordsIndexSameLen:
             for abc_letter in self._abc:
                 abc_letter_bitmap = CompressedBitmap2(
                     byte_sequence=bool_to_byte_bits_seq(
-                        map(
-                            lambda _l: _l == abc_letter,
-                            (w[i] for w in self._words)
-                        )
+                        w[i] == abc_letter for w in self._words
                     )
                 )
                 letter_index[abc_letter] = abc_letter_bitmap
