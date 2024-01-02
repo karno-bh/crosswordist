@@ -1,6 +1,10 @@
-import operator
-import functools
 """
+This module aggregates functionality to create and manipulate compressed byte sequences. The
+compression is done by simplified RLE encoding. Contiguous segments of 0x00 or 0xFF bytes are
+prepended by a control byte (or two)which encode the following length. Segments of bytes non-zero or
+0xFF bytes are also prepended by a control byte (or two) which encode the following length. Segments
+of 0x00 or 0xFF are called "fill bytes", segments of other bytes are called "noise bytes".
+
 Encoding Scheme:
 
 0XXX XXXX -> Start of fill bytes:
@@ -13,8 +17,18 @@ Encoding Scheme:
   11XX XXXX XXXX XXXX -> Long sequence
 """
 
+import operator
+import functools
 
-def compress(byte_sequence):
+
+def compress(byte_sequence) -> bytearray:
+    """ This function compresses the byte sequence by the simplified algorithm
+
+    :param byte_sequence: the sequence of incoming bytes
+    :return: compressed byte sequence
+
+    See module description for the algorithm
+    """
     fill_byte_type = 0
     fill_byte_count = 0
     noise_bytes = bytearray()
@@ -47,7 +61,9 @@ def compress(byte_sequence):
                 fb_cnt -= 8191
             else:
                 if fb_cnt > 31:
-                    fill_seq_control_bytes = ((0x2000 | (fill_bit << 14)) | fb_cnt).to_bytes(2, 'big')
+                    fill_seq_control_bytes = ((0x2000 | (fill_bit << 14)) | fb_cnt).to_bytes(
+                        2,
+                        'big')
                 else:
                     fill_seq_control_bytes = ((fill_bit << 6) | fb_cnt).to_bytes(1,
                                                                                  'big')
@@ -83,6 +99,15 @@ FILL_TYPES = [0x00, 0xFF]
 
 
 class CompressedBitmap:
+    """
+    Simplified class wrapper for the byte sequence for decoding purposes of compressed
+    byte sequence.
+
+    Examples:
+        >>> bs = bytearray.fromhex("0000FFFF8888")
+        >>> bytearray(x for x in CompressedBitmap(bs)) == bs
+        True
+    """
 
     def __init__(self, byte_sequence):
         super().__init__()
@@ -120,6 +145,25 @@ class CompressedBitmap:
 
 
 class CompressedBitmap2:
+    """
+    This class is a wrapper for decoding compressed byte sequence. In addition, the iterator
+    returned by this class can seek its position forward if required. This feature is useful
+    when the bitmap is needed to be sought. For example, in the AND operation of multiple bitmap
+    indexes, if there is contiguous sequence of zeroes in one of them, all others may be sought
+    in the number of such zeroes.
+
+    Examples:
+        >>> bs = bytearray.fromhex("000000FFFF8888")
+        >>> cbmp = CompressedBitmap2(bs)
+        >>> bytearray(b for b in cbmp) == bs
+        True
+        >>> iter(cbmp).seekable_bytes
+        3
+        >>> icbmp = iter(cbmp)
+        >>> icbmp.seek(icbmp.seekable_bytes)
+        >>> next(icbmp)
+        255
+    """
 
     class CompressedBitmap2Iter:
 
@@ -150,7 +194,8 @@ class CompressedBitmap2:
                 is_long = (byte >> 6) & 1
                 if is_long:
                     self._compressed_byte_index += 1
-                    bytes_count = (bytes_count << 8) | self._compressed_seq[self._compressed_byte_index]
+                    bytes_count = ((bytes_count << 8) |
+                                   self._compressed_seq[self._compressed_byte_index])
                 self._compressed_byte_index += 1
             else:
                 self._fill_type = FILL_TYPES[byte >> 6]
@@ -158,7 +203,8 @@ class CompressedBitmap2:
                 is_long = (byte >> 5) & 1
                 if is_long:
                     self._compressed_byte_index += 1
-                    bytes_count = (bytes_count << 8) | self._compressed_seq[self._compressed_byte_index]
+                    bytes_count = ((bytes_count << 8) |
+                                   self._compressed_seq[self._compressed_byte_index])
                 self._compressed_byte_index += 1
             self._remaining_bytes = bytes_count
 

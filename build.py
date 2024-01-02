@@ -32,7 +32,15 @@ def action_coverage():
 
 def action_linter():
     action_start("Running linter")
+    action_start("Running Flake8")
     r("python -m flake8 karnobh/")
+    action_end("Flake8 passed")
+    action_start("Running pylint")
+    r("python -m pylint karnobh/")
+    action_end("pylint passed")
+    action_start("Running mypy")
+    r("python -m mypy karnobh/")
+    action_end("mypy passed")
     action_end("Linter passed")
 
 

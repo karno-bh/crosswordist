@@ -5,7 +5,10 @@ LOGGING_CONFIG = {
     'disable_existing_loggers': True,
     'formatters': {
         'standard': {
-            'format': '%(asctime)s [%(levelname)8s] [%(filename)s:%(lineno)s - %(funcName)s()] %(name)s: %(message)s'
+            'format': '%(asctime)s '
+                      '[%(levelname)8s] '
+                      '[%(filename)s:%(lineno)s - %(funcName)s()] '
+                      '%(name)s: %(message)s'
         },
     },
     'handlers': {

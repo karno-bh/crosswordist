@@ -1,1 +1,4 @@
 coverage==7.3.4
+pylint==2.16.2
+mypy==1.0.1
+mypy-extensions==1.0.0

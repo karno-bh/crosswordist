@@ -18,7 +18,9 @@ class WordsIndexSameLen:
     def __init__(self, length, alphabet=None):
         super().__init__()
         if not isinstance(length, int) or length < 2:
-            raise self.WordsIndexWrongLen("The length of word should be integer and at least 2 letters")
+            raise self.WordsIndexWrongLen(
+                "The length of word should be integer and at least 2 letters"
+            )
         if alphabet is None:
             logger.info("The alphabet is not provided. Latin alphabet will be used.")
             alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -41,7 +43,7 @@ class WordsIndexSameLen:
         self._words.sort()
         self._bitmap_index = []
         for i in range(self._length):
-            letter_index = dict()
+            letter_index = {}
             for abc_letter in self._abc:
                 abc_letter_bitmap = CompressedBitmap2(
                     byte_sequence=bool_to_byte_bits_seq(
