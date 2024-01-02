@@ -1,3 +1,7 @@
+"""
+This module is a configuration of logger for the application.
+Users of this module should run set_logger function after importing this module
+"""
 import logging.config as log_config
 
 LOGGING_CONFIG = {
@@ -40,4 +44,9 @@ LOGGING_CONFIG = {
 
 
 def set_logger():
+    """
+    Sets log configuration for the application.
+    Should run in the main starting module of the application.
+    :return: None
+    """
     log_config.dictConfig(LOGGING_CONFIG)

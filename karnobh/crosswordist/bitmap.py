@@ -139,7 +139,7 @@ class CompressedBitmap:
                 if is_long:
                     byte_index += 1
                     fill_bytes_cnt = (fill_bytes_cnt << 8) | seq[byte_index]
-                for i in range(fill_bytes_cnt):
+                for _ in range(fill_bytes_cnt):
                     yield fill_type
                 byte_index += 1
 
@@ -239,6 +239,16 @@ class CompressedBitmap2:
 
 
 def bit_index(byte_sequence):
+    """ Converts byte sequence bits into the sequential bit number if it is on.
+
+    :param byte_sequence: any byte-like sequence
+    :return: Sequence of integers which are turned on bits in byte sequence bits
+
+    Examples:
+        >>> bs = bytearray.fromhex("001F01")
+        >>> list(bit_index(bs))
+        [11, 12, 13, 14, 15, 23]
+    """
     for byte_index, byte in enumerate(byte_sequence):
         for bit_num in range(7, -1, -1):
             if (byte >> bit_num) & 1:
@@ -281,6 +291,40 @@ OP_TO_BEHAVIOR = {
 
 
 def bit_op_index2(*byte_sequences, op=None):
+    """ Combines byte sequences by provided operator and returns indexes of bits in the sequence
+
+    If the iterator of the sequence supports seeking forward bytes by having the "seekable_bytes"
+    property, the logic of function will seek forward number of bytes that may be sought. For the
+    AND operation the number of bytes that may be bypassed is the maximum number of zero bytes among
+    all sequences. For the OR operation the minimal number of zero bytes may be sought. There is no
+    reason for seeking ones in the OR operation since the function returns indexes of turned on
+    bits, and thus they turned on bits should be reported anyway.
+
+    :param byte_sequences: at least 2 byte sequences
+    :param op: operator from the built-in operator module: only or_(), and_() supported
+    :return: Sequence of integers for which are turned on bits in the hypothetical bits of combined
+             by operator input byte sequences
+
+    Examples:
+        >>> hex_sequences = ["00 00 01", "FF FF FF", "88 88 8F"]
+        >>> compressed_sequences = [CompressedBitmap2(bytearray.fromhex(s)) for s in hex_sequences]
+        >>> list(bit_op_index2(*compressed_sequences, op=operator.and_))
+        [23]
+        >>> list(bit_op_index2(*compressed_sequences, op=operator.or_)) == list(range(3*8))
+        True
+        >>> list(bit_op_index2(compressed_sequences))
+        Traceback (most recent call last):
+        ...
+        karnobh.crosswordist.bitmap.MakeOpError: Operator is not defined
+        >>> list(bit_op_index2(compressed_sequences[0], op=operator.and_))
+        Traceback (most recent call last):
+        ...
+        karnobh.crosswordist.bitmap.NotEnoughSequencesError: Not enough byte sequences
+        >>> list(bit_op_index2(*compressed_sequences, op=operator.xor))
+        Traceback (most recent call last):
+        ...
+        karnobh.crosswordist.bitmap.UnsupportedOperator: Cannot process with operator: <built-in function xor>
+    """
     if op is None:
         raise MakeOpError("Operator is not defined")
     if len(byte_sequences) < 2:
@@ -311,13 +355,25 @@ def bit_op_index2(*byte_sequences, op=None):
 
 
 def bool_to_byte_bits_seq(seq):
-    r, cnt = 0, 0
-    for v in seq:
-        r |= bool(v)
+    """ Converts sequence of True/False values into the byte sequence
+    If sequence is not exact byte alligned (i.e., not divisible by 8), LSB of last bytes returned
+    as 0 bit.
+
+    :param seq: sequence of the True/False values
+    :return: sequence of bytes where True/False converted to bits
+
+    Examples:
+        >>> s = [1, 1, 1, 1,  0, 0, 0, 0,  0, 0, 0, 1]
+        >>> list(bool_to_byte_bits_seq(s)) == [0xF0, 0x10]
+        True
+    """
+    result, cnt = 0, 0
+    for value in seq:
+        result |= bool(value)
         cnt += 1
         if cnt == 8:
-            yield r
-            r, cnt = 0, 0
+            yield result
+            result, cnt = 0, 0
         else:
-            r <<= 1
-    yield r << (7 - cnt)
+            result <<= 1
+    yield result << (7 - cnt)
