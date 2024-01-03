@@ -8,12 +8,13 @@ import logging
 
 from karnobh.crosswordist.bitmap import and_all
 from karnobh.crosswordist.bitmap import bit_index, bit_op_index2
-from karnobh.crosswordist.words_index import WordsIndexSameLen
+from karnobh.crosswordist.words_index import (WordsIndexSameLen, WordsIndexWrongLen,
+                                              NotSupportTypeItem, WordsIndex)
 
 logger = logging.getLogger(__name__)
 
 
-class WordIndexTestCase(unittest.TestCase):
+class WordIndexSameLengthTestCase(unittest.TestCase):
 
     def setUp(self):
         super().setUp()
@@ -35,8 +36,8 @@ class WordIndexTestCase(unittest.TestCase):
             wi.add_word(w)
         wi.make_index()
         actual = []
-        for n in bit_index(and_all(wi.index_bitmap(2, 'A'),
-                                   wi.index_bitmap(0, 'B'))):
+        for n in bit_index(and_all(wi.bitmap_on_position(2, 'A'),
+                                   wi.bitmap_on_position(0, 'B'))):
             # print(wi.word_at(n))
             actual.append(wi.word_at(n))
 
@@ -68,11 +69,11 @@ class WordIndexTestCase(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     def test_word_index_wrong_len_init(self):
-        self.assertRaises(WordsIndexSameLen.WordsIndexWrongLen, WordsIndexSameLen, 1)
+        self.assertRaises(WordsIndexWrongLen, WordsIndexSameLen, 1)
 
     def test_word_index_wrong_len_add(self):
         wi = WordsIndexSameLen(3)
-        self.assertRaises(WordsIndexSameLen.WordsIndexWrongLen, wi.add_word, "HELLO")
+        self.assertRaises(WordsIndexWrongLen, wi.add_word, "HELLO")
 
     def test_word_index_not_from_abc(self):
         wi = WordsIndexSameLen(3)
@@ -81,4 +82,14 @@ class WordIndexTestCase(unittest.TestCase):
 
     def test_word_index_wrong_requested_item(self):
         wi = WordsIndexSameLen(3)
-        self.assertRaises(WordsIndexSameLen.NotSupportTypeItem, lambda: wi['dd'])
+        self.assertRaises(NotSupportTypeItem, lambda: wi['dd'])
+
+
+class WordIndexTestCase(unittest.TestCase):
+
+    def test_corpus_loading(self):
+        pass
+        # with open('/tmp/words_tests/words_upper.txt') as f:
+        #     with WordsIndex.as_context() as wi:
+        #         for word in f:
+        #             wi.add_word(word.strip())

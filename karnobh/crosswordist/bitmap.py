@@ -230,12 +230,19 @@ class CompressedBitmap2:
             self.seek(1)
             return ret_val
 
-    def __init__(self, byte_sequence):
+    def __init__(self, byte_sequence, compressed_sequence=None):
         super().__init__()
-        self._compressed_seq = compress(byte_sequence)
+        if compressed_sequence is None:
+            self._compressed_seq = compress(byte_sequence)
+        else:
+            self._compressed_seq = compressed_sequence
 
     def __iter__(self):
         return self.CompressedBitmap2Iter(compressed_seq=self._compressed_seq)
+
+    @property
+    def compressed_sequence(self):
+        return bytes(self._compressed_seq)
 
 
 def bit_index(byte_sequence):
@@ -345,12 +352,14 @@ def bit_op_index2(*byte_sequences, op=None):
         if all_merged_bytes == 0:
             seekable_bytes = behavior_op(*(getattr(ibs, 'seekable_bytes', 0) for ibs in bs_iters))
             if seekable_bytes > 0:
+                # print(f"seeking {seekable_bytes} bytes")
                 byte_index += seekable_bytes
                 for ibs in bs_iters:
                     ibs.seek(seekable_bytes)
-        for bit_num in range(7, -1, -1):
-            if (byte >> bit_num) & 1:
-                yield byte_index * 8 + (7 - bit_num)
+        if byte != 0:
+            for bit_num in range(7, -1, -1):
+                if (byte >> bit_num) & 1:
+                    yield byte_index * 8 + (7 - bit_num)
         byte_index += 1
 
 
