@@ -2,10 +2,7 @@ from contextlib import contextmanager
 import operator
 import json
 import base64
-from concurrent.futures import ThreadPoolExecutor
 import logging
-import random
-import os
 
 
 from karnobh.crosswordist.bitmap import CompressedBitmap2, bool_to_byte_bits_seq, bit_op_index2
@@ -90,11 +87,11 @@ class WordsIndexSameLen:
                 encoded = base64.b64encode(index.compressed_sequence)
                 letter_index[letter] = encoded.decode('ASCII')
             encoded_bm_index.append(letter_index)
-        return dict(
-            words=self._words,
-            index=encoded_bm_index,
-            abc=self._abc
-        )
+        return {
+            'words': self._words,
+            'index': encoded_bm_index,
+            'abc': self._abc,
+        }
 
     def __getitem__(self, item):
         match item:
@@ -117,7 +114,7 @@ class WordsIndex:
 
     def __init__(self, alphabet: list[str] = None, length_range: range = None, file=None):
         super().__init__()
-        self._words_index = dict()
+        self._words_index = {}
         if file is None:
             self._alphabet = alphabet
             if not length_range:
@@ -138,7 +135,7 @@ class WordsIndex:
                 abc = index_by_word_length['abc']
                 bitmap_index = []
                 for letter_pos in encoded_index:
-                    bitmap_index_on_pos = dict()
+                    bitmap_index_on_pos = {}
                     for letter, encoded_letter_index in letter_pos.items():
                         bitmap_index_on_pos[letter] = CompressedBitmap2(
                             byte_sequence=None,
@@ -196,7 +193,7 @@ class WordsIndex:
         return self.word_index_by_length(item)
 
     def dump(self, file):
-        word_index = dict()
+        word_index = {}
         for length, index in self._words_index.items():
             word_index[length] = index.as_human_readable_dict()
         word_index['range'] = [self._length_range.start, self._length_range.stop]
@@ -206,9 +203,9 @@ class WordsIndex:
         if op is None:
             op = operator.and_
         words_index_same_len = self.word_index_by_length(length)
-        for n in bit_op_index2(*(words_index_same_len[pos:letter] for pos, letter in mapping.items()),
-                               op=op):
-            yield words_index_same_len[n]
+        byte_sequences = (words_index_same_len[pos:letter] for pos, letter in mapping.items())
+        for arr_index in bit_op_index2(*byte_sequences, op=op):
+            yield words_index_same_len[arr_index]
 
 
     @staticmethod
