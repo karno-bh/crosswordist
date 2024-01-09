@@ -202,11 +202,11 @@ class WordsIndex:
         word_index['range'] = [self._length_range.start, self._length_range.stop]
         json.dump(word_index, file, indent=2)
 
-    def lookup(self, length, *pairs, op=None):
+    def lookup(self, length, mapping, op=None):
         if op is None:
             op = operator.and_
         words_index_same_len = self.word_index_by_length(length)
-        for n in bit_op_index2(*(words_index_same_len[pos:letter] for pos, letter in pairs),
+        for n in bit_op_index2(*(words_index_same_len[pos:letter] for pos, letter in mapping.items()),
                                op=op):
             yield words_index_same_len[n]
 
