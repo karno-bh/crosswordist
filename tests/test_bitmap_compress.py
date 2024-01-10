@@ -1,5 +1,6 @@
 import unittest
-from karnobh.crosswordist.bitmap import compress, CompressedBitmap, CompressedBitmap2, bit_index, bool_to_byte_bits_seq
+from karnobh.crosswordist.bitmap import (compress, CompressedBitmap, CompressedBitmap2, bit_index,
+                                         bit_index2, bool_to_byte_bits_seq)
 
 
 class CompressedBitmapTestCase(unittest.TestCase):
@@ -37,6 +38,20 @@ class CompressedBitmapTestCase(unittest.TestCase):
         byte_seq = bytearray.fromhex(t)
         expected = [96, 100]
         actual = [bi for bi in bit_index(byte_seq)]
+        self.assertEqual(expected, actual)
+
+    def test_bit_index2_simple(self):
+        t = '00000000000000000000000088'
+        byte_seq = bytearray.fromhex(t)
+        expected = [96, 100]
+        actual = [bi for bi in bit_index2(byte_seq)]
+        self.assertEqual(expected, actual)
+
+    def test_bit_index2_simple_compressed(self):
+        t = '00000000000000000000000088'
+        byte_seq = CompressedBitmap2(bytearray.fromhex(t))
+        expected = [96, 100]
+        actual = [bi for bi in bit_index2(byte_seq)]
         self.assertEqual(expected, actual)
 
     def test_bit_index_generic(self):

@@ -179,7 +179,7 @@ class CompressedBitmap2:
 
         @property
         def seekable_bytes(self):
-            if self._is_noise:
+            if self._is_noise or self._fill_type == 0xFF:
                 return 0
             return self._remaining_bytes
 
@@ -260,6 +260,23 @@ def bit_index(byte_sequence):
         for bit_num in range(7, -1, -1):
             if (byte >> bit_num) & 1:
                 yield byte_index * 8 + (7 - bit_num)
+
+
+def bit_index2(byte_sequence):
+    byte_index = 0
+    bs_iter = iter(byte_sequence)
+    while (byte := next(bs_iter, None)) is not None:
+        if byte == 0:
+            seekable_bytes = getattr(bs_iter, 'seekable_bytes', 0)
+            if seekable_bytes > 0:
+                # print("seekable bytes: ", seekable_bytes)
+                byte_index += seekable_bytes
+                bs_iter.seek(seekable_bytes)
+        if byte != 0:
+            for bit_num in range(7, -1, -1):
+                if (byte >> bit_num) & 1:
+                    yield byte_index * 8 + (7 - bit_num)
+        byte_index += 1
 
 
 class MakeOpError(Exception):

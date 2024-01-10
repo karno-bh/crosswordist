@@ -1,4 +1,9 @@
+import json
 import operator
+import random
+import time
+import importlib.resources as pkg_res
+import io
 
 import karnobh.crosswordist.log_config as log_config
 log_config.set_logger()
@@ -10,6 +15,7 @@ from karnobh.crosswordist.bitmap import and_all
 from karnobh.crosswordist.bitmap import bit_index, bit_op_index2
 from karnobh.crosswordist.words_index import (WordsIndexSameLen, WordsIndexWrongLen,
                                               NotSupportTypeItem, WordsIndex)
+from karnobh.crosswordist.naive_lookup import naive_lookup
 
 logger = logging.getLogger(__name__)
 
@@ -85,11 +91,113 @@ class WordIndexSameLengthTestCase(unittest.TestCase):
         self.assertRaises(NotSupportTypeItem, lambda: wi['dd'])
 
 
+class NaiveIndexTestCase(unittest.TestCase):
+
+    def test_naive_lookup(self):
+        words = [
+            "AAA",
+            "AAB",
+            "AAC",
+            "AAD",
+            "AAF",
+            "AAG",
+            "AAH",
+            "AAI",
+            "BAA",
+        ]
+        res = naive_lookup(words, {0: 'B', 2: 'A'})
+        expected = ['BAA']
+        self.assertEqual(expected, res)
+
+
 class WordIndexTestCase(unittest.TestCase):
 
+    def setUp(self):
+        super().setUp()
+        self.assets_package = 'tests.assets'
+        self.corpus_file = 'random_filtered_words.txt'
+        self.index_file = 'random_filtered_words_idx.json'
+
     def test_corpus_loading(self):
-        pass
-        # with open('/tmp/words_tests/words_upper.txt') as f:
-        #     with WordsIndex.as_context() as wi:
-        #         for word in f:
-        #             wi.add_word(word.strip())
+        with pkg_res.open_text(self.assets_package, self.corpus_file) as f:
+            with WordsIndex.as_context() as words_index:
+                for word in f:
+                    words_index.add_word(word.strip())
+        with io.StringIO() as str_f:
+            words_index.dump(str_f)
+            str_f.seek(0)
+            created_index = json.load(str_f)
+        with pkg_res.open_text(self.assets_package, self.index_file) as f:
+            expected_index = json.load(f)
+        self.assertEqual(expected_index, created_index)
+
+    def test_index_loading(self):
+        with pkg_res.open_text(self.assets_package, self.index_file) as f:
+            words_index = WordsIndex(file=f)
+        with io.StringIO() as str_f:
+            words_index.dump(str_f)
+            str_f.seek(0)
+            created_index = json.load(str_f)
+        with pkg_res.open_text(self.assets_package, self.index_file) as f:
+            expected_index = json.load(f)
+        self.assertEqual(expected_index, created_index)
+
+    def test_word_index(self):
+        with pkg_res.open_text(self.assets_package, self.index_file) as f:
+            words_index = WordsIndex(file=f)
+        # with open('/tmp/words_tests/index.json') as f:
+        #     words_index = WordsIndex(file=f)
+        abc = 'ABCDEFGHIGKLMNOPQRSTUVWXYZ'
+        total_index_time = 0
+        total_non_index_time = 0
+        for i in range(1000):
+            if i % 100 == 0:
+                ratio = 0 if total_index_time == 0 else total_non_index_time / total_index_time
+                logger.info("i = %s; total_index_time = %s;"
+                            " total_non_index_time = %s; ratio = %s",
+                            i, total_index_time, total_non_index_time, ratio)
+            for word_length in range(3, 7):
+                number_of_letters = random.randint(1, word_length - 1)
+                letter_indexes = list(range(word_length))
+                random.shuffle(letter_indexes)
+                # print(letter_indexes[:number_of_letters])
+                actual_letter_indexes = letter_indexes[:number_of_letters]
+                filter_set = {k: random.choice(abc) for k in actual_letter_indexes}
+                # print(filter_set)
+                t0 = time.time()
+                index_words = list(words_index.lookup(word_length, mapping=filter_set))
+                t1 = time.time()
+                non_index_words = naive_lookup(words_index[word_length], mapping=filter_set)
+                t2 = time.time()
+                total_index_time += t1 - t0
+                total_non_index_time += t2 - t1
+                try:
+                    self.assertEqual(non_index_words, index_words)
+                except AssertionError:
+                    logger.error("Assertion error on filter_set=%s, length=%s", filter_set, word_length)
+                    raise
+        logger.info("Total index time: %s, total non index time: %s",
+                    total_index_time, total_non_index_time)
+
+    # def test_for_debug(self):
+    #     with pkg_res.open_text(self.assets_package, self.index_file) as f:
+    #         words_index = WordsIndex(file=f)
+    #
+    #     filter_set = {4: 'E', 1: 'D'}
+    #     word_length = 5
+    #     index_words = list(words_index.lookup(word_length, mapping=filter_set))
+    #     non_index_words = naive_lookup(words_index[word_length], mapping=filter_set)
+    #     print("index words: ", index_words)
+    #     print("non index words: ", non_index_words)
+    #     self.assertEqual(index_words, non_index_words)
+    #
+    # def test_for_debug2(self):
+    #     with pkg_res.open_text(self.assets_package, self.index_file) as f:
+    #         words_index = WordsIndex(file=f)
+    #     filter_set = {1: 'C'}
+    #     word_length = 5
+    #     index_words = list(words_index.lookup(word_length, mapping=filter_set))
+    #     non_index_words = naive_lookup(words_index[word_length], mapping=filter_set)
+    #     print("index words: ", index_words)
+    #     print("non index words: ", non_index_words)
+    #     self.assertEqual(set(index_words), set(non_index_words))
