@@ -111,3 +111,6 @@ venv.bak/
 *.swp
 tags
 .mypy_cache
+
+#VSCode specific
+.vscode

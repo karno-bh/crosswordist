@@ -380,6 +380,42 @@ def bit_op_index2(*byte_sequences, op=None):
         byte_index += 1
 
 
+def bit_op_index3(*byte_sequences, op=None):
+    if op is None:
+        raise MakeOpError("Operator is not defined")
+    if len(byte_sequences) < 2:
+        raise NotEnoughSequencesError("Not enough byte sequences")
+
+    behavior_op = OP_TO_BEHAVIOR.get(op)
+    if behavior_op is None:
+        raise UnsupportedOperator(f"Cannot process with operator: {op}")
+
+    res = []
+
+    byte_index = 0
+    bs_iters = [iter(bs) for bs in byte_sequences]
+    while True:
+        main_byte, *other_bytes = [next(i, None) for i in bs_iters]
+        if main_byte is None:
+            break
+        byte = functools.reduce(op, other_bytes, main_byte)
+        all_merged_bytes = functools.reduce(operator.or_, other_bytes, main_byte)
+        if all_merged_bytes == 0:
+            seekable_bytes = behavior_op(*(getattr(ibs, 'seekable_bytes', 0) for ibs in bs_iters))
+            if seekable_bytes > 0:
+                # print(f"seeking {seekable_bytes} bytes")
+                byte_index += seekable_bytes
+                for ibs in bs_iters:
+                    ibs.seek(seekable_bytes)
+        if byte != 0:
+            for bit_num in range(7, -1, -1):
+                if (byte >> bit_num) & 1:
+                    res.append(byte_index * 8 + (7 - bit_num))
+        byte_index += 1
+    # print("res length = ", len(res))
+    return res
+
+
 def bool_to_byte_bits_seq(seq):
     """ Converts sequence of True/False values into the byte sequence
     If sequence is not exact byte alligned (i.e., not divisible by 8), LSB of last bytes returned

@@ -6,7 +6,7 @@ import logging
 
 
 from karnobh.crosswordist.bitmap import (CompressedBitmap2, bool_to_byte_bits_seq, bit_index2,
-                                         bit_op_index2)
+                                         bit_op_index3, bit_op_index2)
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +39,7 @@ class WordsIndexSameLen:
         self._length = length
         self._bitmap_index = bitmap_index
         self._words = words or set()
+        # print(f"length: {length}, words#: {len(words)}")
 
     def __len__(self):
         return self._length
@@ -208,11 +209,11 @@ class WordsIndex:
         if op is None:
             op = operator.and_
         words_index_same_len = self.word_index_by_length(length)
-        byte_sequences = [words_index_same_len[pos:letter] for pos, letter in mapping.items()]
+        byte_sequences = [words_index_same_len.bitmap_on_position(pos, letter) for pos, letter in mapping.items()]
         arr_index_stream = bit_op_index2(*byte_sequences, op=op)\
             if len(byte_sequences) != 1 else bit_index2(byte_sequences[0])
         for arr_index in arr_index_stream:
-            yield words_index_same_len[arr_index]
+            yield words_index_same_len._words[arr_index]
 
 
     @staticmethod

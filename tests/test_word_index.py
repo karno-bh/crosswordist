@@ -167,7 +167,7 @@ class WordIndexTestCase(unittest.TestCase):
                 t0 = time.time()
                 index_words = list(words_index.lookup(word_length, mapping=filter_set))
                 t1 = time.time()
-                non_index_words = naive_lookup(words_index[word_length], mapping=filter_set)
+                non_index_words = naive_lookup(words_index[word_length].words, mapping=filter_set)
                 t2 = time.time()
                 total_index_time += t1 - t0
                 total_non_index_time += t2 - t1
