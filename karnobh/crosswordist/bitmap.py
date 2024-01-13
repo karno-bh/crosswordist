@@ -209,12 +209,15 @@ class CompressedBitmap2:
             self._remaining_bytes = bytes_count
 
         def seek(self, bytes_to_seek):
+            print("IN seek with bytes to seek: ", bytes_to_seek)
             while self._remaining_bytes < bytes_to_seek:
+                print(f"Bytes to seek: ", bytes_to_seek)
                 bytes_to_seek -= self._remaining_bytes
                 if self._is_noise:
                     self._compressed_byte_index += self._remaining_bytes
                 self._read_control_byte()
             self._remaining_bytes -= bytes_to_seek
+            print(f"Remaining bytes: ", self._remaining_bytes)
             if self._is_noise:
                 self._compressed_byte_index += bytes_to_seek
             if self._remaining_bytes == 0:
@@ -368,10 +371,13 @@ def bit_op_index2(*byte_sequences, op=None):
         all_merged_bytes = functools.reduce(operator.or_, other_bytes, main_byte)
         if all_merged_bytes == 0:
             seekable_bytes = behavior_op(*(getattr(ibs, 'seekable_bytes', 0) for ibs in bs_iters))
+            print("Seekable bytes: ", seekable_bytes)
             if seekable_bytes > 0:
                 # print(f"seeking {seekable_bytes} bytes")
+                print("Byte index: ", byte_index)
                 byte_index += seekable_bytes
                 for ibs in bs_iters:
+                    print("Starting seeking iter")
                     ibs.seek(seekable_bytes)
         if byte != 0:
             for bit_num in range(7, -1, -1):

@@ -29,18 +29,20 @@ def test_word_index():
             filter_set = {k: random.choice(abc) for k in actual_letter_indexes}
             # print(filter_set)
             t0 = time.time()
-            index_words = list(words_index.lookup(word_length, mapping=filter_set))
+            index_words = list(words_index.lookup_native(word_length, mapping=filter_set))
             t1 = time.time()
-            # non_index_words = naive_lookup(words_index[word_length].words, mapping=filter_set)
+            non_index_words = naive_lookup(words_index[word_length].words, mapping=filter_set)
             t2 = time.time()
             total_index_time += t1 - t0
             total_non_index_time += t2 - t1
             try:
                 # self.assertEqual(non_index_words, index_words)
-                # if non_index_words != index_words:
-                #     raise Exception("Assert failed")
-                if index_words != index_words:
-                    raise Exception("Lala lala")
+                if non_index_words != index_words:
+                    raise Exception("Assert failed")
+                else:
+                    print("=== OK ====")
+                # if index_words != index_words:
+                #     raise Exception("Lala lala")
             except Exception:
                 logger.error("Assertion error on filter_set=%s, length=%s", filter_set, word_length)
                 raise
@@ -49,8 +51,25 @@ def test_word_index():
     print(f"Total index time: {total_index_time}, total non index time {total_non_index_time} "
           f"Ratio {total_non_index_time / total_index_time}")
 
+def test_concrete():
+    # mapping = {0: 'T', 2: 'C'}
+    # mapping = {2: 'C'}
+    # length = 4
+    mapping = {0: 'B', 1: 'A'}
+    length = 19
+    with open('/tmp/words_tests/index.json') as f:
+        words_index = WordsIndex(file=f)
+    print(words_index[length].words, len(words_index[length].words))
+    # index_words = list(words_index.lookup_native(length, mapping=mapping))
+    index_words = list(words_index.lookup(length, mapping=mapping))
+    print(index_words)
+    print("==== NATIVE ====")
+    index_words = list(words_index.lookup_native(length, mapping=mapping))
+    print(index_words)
+
 def main():
-    test_word_index()
+    # test_word_index()
+    test_concrete()
 
 if __name__ == '__main__':
     main()

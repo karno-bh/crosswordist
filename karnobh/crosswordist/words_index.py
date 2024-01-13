@@ -7,6 +7,7 @@ import logging
 
 from karnobh.crosswordist.bitmap import (CompressedBitmap2, bool_to_byte_bits_seq, bit_index2,
                                          bit_op_index3, bit_op_index2)
+from karnobh.crosswordist.compressed_seq import bit_index_native, bit_and_op_index_native
 
 logger = logging.getLogger(__name__)
 
@@ -212,6 +213,17 @@ class WordsIndex:
         byte_sequences = [words_index_same_len.bitmap_on_position(pos, letter) for pos, letter in mapping.items()]
         arr_index_stream = bit_op_index2(*byte_sequences, op=op)\
             if len(byte_sequences) != 1 else bit_index2(byte_sequences[0])
+        for arr_index in arr_index_stream:
+            yield words_index_same_len._words[arr_index]
+
+    def lookup_native(self, length, mapping):
+        words_index_same_len = self.word_index_by_length(length)
+        byte_sequences = [words_index_same_len.bitmap_on_position(pos, letter).compressed_sequence for pos, letter in mapping.items()]
+        # print(byte_sequences)
+        arr_index_stream = bit_and_op_index_native(byte_sequences) if len(byte_sequences) != 1 else bit_index_native(byte_sequences[0])
+        print("length", length)
+        print("mapping", mapping)
+        print("arr_index_stream", arr_index_stream)
         for arr_index in arr_index_stream:
             yield words_index_same_len._words[arr_index]
 
