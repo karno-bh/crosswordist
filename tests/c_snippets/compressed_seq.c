@@ -10,16 +10,18 @@ typedef struct CompressedSeqIter {
     size_t remaining_bytes;
     bool is_noise;
     unsigned char fill_type;
-    Py_buffer* buf;
+    // Py_buffer* buf;
+    size_t len;
+    unsigned char* buffer;
     bool stop_iteration;
 } CompressedSeqIter;
 
 
 void CompressedSeqIter_read_control_byte(CompressedSeqIter* seq_iter) {
-    if (seq_iter->pos > (size_t) seq_iter->buf->len) {
+    if (seq_iter->pos >= (size_t) seq_iter->len) {
         seq_iter->stop_iteration = true;
     }
-    unsigned char* buffer = seq_iter->buf->buf;
+    unsigned char* buffer = seq_iter->buffer;
     unsigned char byte = buffer[seq_iter->pos];
     seq_iter->is_noise = byte >> 7;
     // printf("Control byte: %x\n", byte & 0xff);
@@ -31,7 +33,8 @@ void CompressedSeqIter_read_control_byte(CompressedSeqIter* seq_iter) {
         is_long = (byte >> 6) & 1;
         // printf("is_long %d\n", is_long);
         if (is_long) {
-            bytes_count = (bytes_count << 8) | buffer[++seq_iter->pos];
+            seq_iter->pos++;
+            bytes_count = (bytes_count << 8) | buffer[seq_iter->pos];
         }
     } else {
         // printf("Fill byte\n");
@@ -39,24 +42,31 @@ void CompressedSeqIter_read_control_byte(CompressedSeqIter* seq_iter) {
         bytes_count = byte & 0x1F;
         is_long = (byte >> 5) & 1;
         if (is_long) {
-            bytes_count = (bytes_count << 8) | buffer[++seq_iter->pos];
+            seq_iter->pos++;
+            bytes_count = (bytes_count << 8) | buffer[seq_iter->pos];
         }
     }
     ++seq_iter->pos;
     seq_iter->remaining_bytes = bytes_count;
+    // printf("after control load: pos = %d, remaining = %d\n", (int)seq_iter->pos, (int)seq_iter->remaining_bytes);
+    // for (Py_ssize_t i = 0; i < seq_iter->buf->len; i++) {
+    //     printf("%x", buffer[i] & 0xff);
+    // }
+    // printf("\n");
 }
 
 void CompressedSeqIter_new(CompressedSeqIter* seq_iter, Py_buffer* buf) {
     seq_iter->pos = 0;
     seq_iter->stop_iteration = false;
-    seq_iter->buf = buf;
+    seq_iter->len = buf->len;
+    seq_iter->buffer = buf->buf;
     CompressedSeqIter_read_control_byte(seq_iter);
 };
 
 void CompressedSeqIter_seek(CompressedSeqIter* seq_iter, size_t bytes_to_seek) {
-    printf("IN seek with bytes to seek: %d\n", (int)bytes_to_seek);
+    // printf("IN seek with bytes to seek: %d. Pos = %d remaining = %d\n", (int)bytes_to_seek, (int)seq_iter->pos, (int)seq_iter->remaining_bytes);
     while (seq_iter->remaining_bytes < bytes_to_seek) {
-        printf("Bytes to seek %d\n", (int)bytes_to_seek);
+        // printf("Bytes to seek %d, pos = %d remaining = %d\n", (int)bytes_to_seek, (int)seq_iter->pos, (int)seq_iter->remaining_bytes);
         bytes_to_seek -= seq_iter->remaining_bytes;
         if (seq_iter->is_noise) {
             seq_iter->pos += seq_iter->remaining_bytes;
@@ -64,7 +74,7 @@ void CompressedSeqIter_seek(CompressedSeqIter* seq_iter, size_t bytes_to_seek) {
         CompressedSeqIter_read_control_byte(seq_iter);
     }
     seq_iter->remaining_bytes -= bytes_to_seek;
-    printf("Remaining bytes: %d\n", (int)seq_iter->remaining_bytes);
+    // printf("Remaining bytes: %d, pos = %d remaining = %d\n", (int)seq_iter->remaining_bytes, (int)seq_iter->pos, (int)seq_iter->remaining_bytes);
     if (seq_iter->is_noise) {
         seq_iter->pos += bytes_to_seek;
     }
@@ -79,7 +89,7 @@ int CompressedSeqIter_next(CompressedSeqIter* seq_iter) {
     }
     unsigned char ret_val;
     if (seq_iter->is_noise) {
-        unsigned char* buffer = seq_iter->buf->buf;
+        unsigned char* buffer = seq_iter->buffer;
         ret_val = buffer[seq_iter->pos];
     } else {
         ret_val = seq_iter->fill_type;
@@ -140,7 +150,9 @@ static PyObject* bit_index_native(PyObject* self, PyObject* args) {
                 if ((decompressed_val >> bit_num) & 1) {
                     unsigned int output_val = byte_index * 8 + (7 - bit_num);
                     // printf("output val: %d\n", output_val);
-                    PyList_Append(result_list, PyLong_FromLong(output_val));
+                    PyObject* py_long = PyLong_FromLong(output_val);
+                    PyList_Append(result_list, py_long);
+                    Py_DECREF(py_long);
                 }
             }
         }
@@ -164,12 +176,11 @@ static PyObject* bit_index_native(PyObject* self, PyObject* args) {
 }
 
 
-void _cleanup_compressed_seq_iters(CompressedSeqIter* iters, size_t iters_num) {
-    for (size_t i = 0; i < iters_num; i++) {
-        CompressedSeqIter iter = iters[i];
-        PyBuffer_Release(iter.buf);
-    }
-}
+// void _cleanup_compressed_seq_iters(CompressedSeqIter* iters, size_t iters_num) {
+//     for (size_t i = 0; i < iters_num; i++) {
+//         CompressedSeqIter iter = iters[i];
+//     }
+// }
 
 static PyObject* bit_and_op_index_native(PyObject* self, PyObject* args) {
 
@@ -192,6 +203,7 @@ static PyObject* bit_and_op_index_native(PyObject* self, PyObject* args) {
     size_t iters_num = 0;
     CompressedSeqIter seq_iters[MAX_ITERS];
     int iter_results[MAX_ITERS];
+    // Py_buffer buffers[MAX_ITERS];
     // size_t seekable_bytes_per_iter[MAX_ITERS];
 
 
@@ -213,11 +225,12 @@ static PyObject* bit_and_op_index_native(PyObject* self, PyObject* args) {
             // }
             // exit_status = too_many_buffers;
             // goto end_of_func;
-            _cleanup_compressed_seq_iters(seq_iters, iters_num);
+            // _cleanup_compressed_seq_iters(seq_iters, iters_num);
             PyErr_SetString(PyExc_BufferError, "Too many buffers to process");
             return NULL;
         }
-        CompressedSeqIter_new(&seq_iters[iters_num++], &buffer);
+        CompressedSeqIter_new(&seq_iters[iters_num], &buffer);
+        iters_num++;
         
 
         // char* buf = buffer.buf;
@@ -227,7 +240,7 @@ static PyObject* bit_and_op_index_native(PyObject* self, PyObject* args) {
         // }
         // printf("\n");
 
-        // PyBuffer_Release(&buffer);
+        PyBuffer_Release(&buffer);
     }
 
     if (iters_num < 2) {
@@ -259,12 +272,12 @@ static PyObject* bit_and_op_index_native(PyObject* self, PyObject* args) {
                     max_seekable_bytes = seekable_bytes;
                 }
             }
-            printf("Max seekable bytes %d\n", max_seekable_bytes);
+            // printf("Max seekable bytes %d\n", max_seekable_bytes);
             if (max_seekable_bytes > 0) {
-                printf("Byte index: %d\n", byte_index);
+                // printf("Byte index: %d\n", byte_index);
                 byte_index += max_seekable_bytes;
                 for (size_t i = 0; i < iters_num; i++) {
-                    printf("Starting seeking iter\n");
+                    // printf("Starting seeking iter\n");
                     CompressedSeqIter_seek(&seq_iters[i], (size_t) max_seekable_bytes);
                 }
             }
@@ -275,7 +288,9 @@ static PyObject* bit_and_op_index_native(PyObject* self, PyObject* args) {
                 if ((byte >> bit_num) & 1) {
                     unsigned int output_val = byte_index * 8 + (7 - bit_num);
                     // printf("output val: %d\n", output_val);
-                    PyList_Append(result_list, PyLong_FromLong(output_val));
+                    PyObject* py_long = PyLong_FromLong(output_val);
+                    PyList_Append(result_list, py_long);
+                    Py_DECREF(py_long);
                 }
             }
         }
@@ -288,7 +303,7 @@ static PyObject* bit_and_op_index_native(PyObject* self, PyObject* args) {
         
     // }
 
-    _cleanup_compressed_seq_iters(seq_iters, iters_num);
+    // _cleanup_compressed_seq_iters(seq_iters, iters_num);
 
 
     return result_list;
