@@ -8,10 +8,10 @@ const int MAX_ITERS = 64;
 typedef struct CompressedSeqIter {
     size_t pos;
     size_t remaining_bytes;
-    bool is_noise;
-    unsigned char fill_type;
     size_t len;
     unsigned char* buffer;
+    unsigned char fill_type;
+    bool is_noise;
     bool stop_iteration;
 } CompressedSeqIter;
 
