@@ -7,7 +7,7 @@ import logging
 
 from karnobh.crosswordist.bitmap import (CompressedBitmap2, bool_to_byte_bits_seq, bit_index2,
                                          bit_op_index3, bit_op_index2)
-from karnobh.crosswordist.compressed_seq import bit_index_native, bit_and_op_index_native
+from crosswordist_native_index.compressed_seq import bit_index_native, bit_and_op_index_native
 
 logger = logging.getLogger(__name__)
 

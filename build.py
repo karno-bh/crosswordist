@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import subprocess
 import sys
 
@@ -50,7 +51,18 @@ def action_install_req():
     action_end("Installing requirements passed")
 
 
+def action_compile_native():
+    action_start("Compile Native")
+    current_dir = os.path.dirname(os.path.realpath(__file__))
+    compressed_seq_ops = os.path.join(os.path.abspath(current_dir), "compressed_seq_ops")
+    r(f"cd {compressed_seq_ops}\n"
+      f"python setup.py install\n"
+      f"cd {current_dir}")
+    action_end("Compile Native passed")
+
+
 def action_build():
+    action_compile_native()
     action_install_req()
     action_linter()
     action_tests()

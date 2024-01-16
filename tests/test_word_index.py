@@ -165,7 +165,7 @@ class WordIndexTestCase(unittest.TestCase):
                 filter_set = {k: random.choice(abc) for k in actual_letter_indexes}
                 # print(filter_set)
                 t0 = time.time()
-                index_words = list(words_index.lookup(word_length, mapping=filter_set))
+                index_words = list(words_index.lookup_native(word_length, mapping=filter_set))
                 t1 = time.time()
                 non_index_words = naive_lookup(words_index[word_length].words, mapping=filter_set)
                 t2 = time.time()
