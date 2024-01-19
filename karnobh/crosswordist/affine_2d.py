@@ -20,6 +20,10 @@ class FlatMatrix:
     def data(self):
         return list(self._data)
 
+    @property
+    def size(self):
+        return self._width, self._height
+
     def __idx(self, i: int, j: int):
         return j * self._width + i
 

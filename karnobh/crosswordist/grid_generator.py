@@ -2,8 +2,8 @@ import random
 from karnobh.crosswordist.affine_2d import FlatMatrix, translate, ROT_INT_90, point
 
 
-def create_grid(size, black_ratio=1/6, all_checked=True, symmetry='X',
-                min_word_size=3):
+def create_random_grid(size, black_ratio=1 / 6, all_checked=True, symmetry='X',
+                       min_word_size=3):
     inc_vectors = [-1 + 0j, 1 + 0j, 0 - 1j, 0 + 1j]
     transform_mt = translate(size - 1, 0) * ROT_INT_90
     pane = FlatMatrix(size, size)
@@ -36,3 +36,40 @@ def create_grid(size, black_ratio=1/6, all_checked=True, symmetry='X',
                 pane.set(x, y, 1, clone=False)
             blacks_num += len(points)
     return pane
+
+
+class WordDirection:
+    HORIZONTAL = 0
+    VERTICAL = 1
+
+
+def get_all_checked_words_layout(grid: FlatMatrix):
+    width, height = grid.size
+    layout = []
+    for j in range(height):
+        for i in range(width):
+            word_horiz_len, word_vert_len = 0, 0
+            if grid.out_of_range(i - 1, j) or grid.get(i - 1, j) == 1:
+                word_i = i
+                while not grid.out_of_range(word_i, j) and grid.get(word_i, j) != 1:
+                    word_i += 1
+                word_horiz_len = word_i - i
+                if word_horiz_len > 0:
+                    layout.append([(WordDirection.HORIZONTAL, i, j, word_horiz_len)])
+            if grid.out_of_range(i, j - 1) or grid.get(i, j - 1) == 1:
+                word_j = j
+                while not grid.out_of_range(i, word_j) and grid.get(i, word_j) != 1:
+                    word_j += 1
+                word_vert_len = word_j - j
+                if word_vert_len > 0:
+                    word_vert_data = (WordDirection.VERTICAL, i, j, word_vert_len)
+                    if word_horiz_len > 0:
+                        layout[-1].append(word_vert_data)
+                    else:
+                        layout.append([word_vert_data])
+
+    return layout
+
+
+def create_invert_index(words_layout):
+    pass

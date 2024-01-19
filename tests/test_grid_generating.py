@@ -4,6 +4,9 @@ import math
 from karnobh.crosswordist.affine_2d import (FlatMatrix, point, translate, rotate, scale, identity,
                                             WrongMatrixDimension)
 
+from karnobh.crosswordist.grid_generator import (create_random_grid, get_all_checked_words_layout,
+                                                 WordDirection)
+
 
 class TestFlatMatrix(unittest.TestCase):
 
@@ -119,3 +122,38 @@ class TestFlatMatrix(unittest.TestCase):
 class TestGridGenerating(unittest.TestCase):
     def test_something(self):
         self.assertEqual(True, True)
+
+    def test_all_checked_generated_words(self):
+        grid_size = 25
+        grid = create_random_grid(grid_size)
+        # print(grid)
+        # print(grid.data)
+        # data = [1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1]
+        # grid = FlatMatrix(grid_size, grid_size, new_state=data)
+        words_layout = get_all_checked_words_layout(grid)
+        # print(words_layout)
+        # print(len(words_layout))
+        test_matrix = FlatMatrix(grid_size, grid_size, initial_val=2)
+
+        for word_layout in words_layout:
+            for pos_word_layout in word_layout:
+                word_dir, x_init, y_init, word_len = pos_word_layout
+                if word_dir == WordDirection.HORIZONTAL:
+                    if not test_matrix.out_of_range(x_init - 1, y_init):
+                        test_matrix.set(x_init - 1, y_init, 1, clone=False)
+                    for x in range(x_init, x_init + word_len):
+                        test_matrix.set(x, y_init, 0, clone=False)
+                elif word_dir == WordDirection.VERTICAL:
+                    if not test_matrix.out_of_range(x_init, y_init - 1):
+                        test_matrix.set(x_init, y_init - 1, 1, clone=False)
+                    for y in range(y_init, y_init + word_len):
+                        test_matrix.set(x_init, y, 0, clone=False)
+        for i in range(grid_size):
+            for j in range(grid_size):
+                if (test_matrix.get(i, j) == 2 and
+                    (test_matrix.out_of_range(i + 1, j) or test_matrix.get(i + 1, j) in (1, 2)) and
+                    (test_matrix.out_of_range(i, j + 1) or test_matrix.get(i, j + 1) in (1, 2))):
+                    test_matrix.set(i, j, 1, clone=False)
+        # print(test_matrix)
+        # print(test_matrix.get(23, 24))
+        self.assertEqual(grid.data, test_matrix.data)
