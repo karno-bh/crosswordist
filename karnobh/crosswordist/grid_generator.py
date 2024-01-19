@@ -9,7 +9,12 @@ def create_random_grid(size, black_ratio=1 / 6, all_checked=True, symmetry='X',
     pane = FlatMatrix(size, size)
     max_blacks = int(size * size * black_ratio)
     blacks_num = 0
+    iterations = 0
     while blacks_num <= max_blacks:
+        if iterations > size ** 3:
+            pane = FlatMatrix(size, size)
+            blacks_num = 0
+            iterations = 0
         regen_points = False
         points = ([p := point(*[random.randint(0, size - 1) for _ in range(2)])] +
                   [p := transform_mt * p for _ in range(3)])
@@ -17,6 +22,12 @@ def create_random_grid(size, black_ratio=1 / 6, all_checked=True, symmetry='X',
             if pane.get(x, y) != 0:
                 regen_points = True
                 break
+        if regen_points:
+            continue
+        for x, y, *_ in points:
+            pane.set(x, y, 1, clone=False)
+        blacks_num += len(points)
+        for x, y, *_ in points:
             if all_checked:
                 current = complex(x, y)
                 vectors = [current + iv for iv in inc_vectors]
@@ -31,10 +42,11 @@ def create_random_grid(size, black_ratio=1 / 6, all_checked=True, symmetry='X',
                         break
             else:
                 raise Exception("all_checked=False not supported")
-        if not regen_points:
+        if regen_points:
             for x, y, *_ in points:
-                pane.set(x, y, 1, clone=False)
-            blacks_num += len(points)
+                pane.set(x, y, 0, clone=False)
+            blacks_num -= len(points)
+        iterations += 1
     return pane
 
 
