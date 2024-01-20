@@ -149,6 +149,7 @@ def rotate(theta, elem_type=float):
 
 
 ROT_INT_90 = rotate(pi / 2, elem_type=int)
+ROT_INT_180 = rotate(pi, elem_type=int)
 ROT_INT_NEG_90 = rotate(-pi / 2, elem_type=int)
 
 
