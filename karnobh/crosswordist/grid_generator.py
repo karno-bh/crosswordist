@@ -6,7 +6,7 @@ class WordDirection:
     HORIZONTAL = 0
     VERTICAL = 1
 
-@dataclass(slots=True)
+@dataclass(slots=True, init=False, repr=False)
 class WordLayout:
     word_num: int
     direction: WordDirection
@@ -15,6 +15,36 @@ class WordLayout:
     word_len: int
     word_letters: list[str]
     word_intersects: list[tuple]
+
+    def __init__(self, word_num, direction, x_init, y_init, word_len):
+        # super().__init__()
+        self.word_num = word_num
+        self.direction = direction
+        self.x_init = x_init
+        self.y_init = y_init
+        self.word_len = word_len
+        self.word_letters = [""] * self.word_len
+        self.word_intersects = [()] * self.word_len
+
+    def __repr__(self):
+        word_intersects_repr = []
+        for word in self.word_intersects:
+            if word:
+                intersected_word: WordLayout = word[0]
+                intersected_pos: int = word[1]
+                dir_letter = 'H' if intersected_word.direction == WordDirection.HORIZONTAL else 'V'
+                repr_state = (intersected_word.word_num, dir_letter, intersected_pos)
+            else:
+                repr_state = ()
+            word_intersects_repr.append(repr_state)
+
+        return (f"WordLayout({self.word_num}, {self.direction}, {self.x_init}, "
+                f"{self.y_init}, {self.word_letters}, {word_intersects_repr})")
+
+    def __del__(self):
+        for i in range(len(self.word_intersects)):
+            self.word_intersects[i] = None
+
 
 def create_random_grid(size, black_ratio=1 / 6, all_checked=True, symmetry='X',
                        min_word_size=3):
@@ -102,21 +132,53 @@ def create_cross_words_index(words_layout: list[list[tuple]], grid: FlatMatrix):
     vertical_index, horizontal_index = [[] for _ in range(width)], [[] for _ in range(height)]
     vertical_words = []
     horizontal_words = []
-    for word_n, word_layout in enumerate(words_layout):
+    for word_num, word_layout in enumerate(words_layout):
         for pos_word_layout in word_layout:
             word_dir, x_init, y_init, word_len = pos_word_layout
-            pos_word_layout += (word_n,)
+            pos_word_layout_data = WordLayout(
+                word_num=word_num,
+                direction=word_dir,
+                x_init=x_init,
+                y_init=y_init,
+                word_len=word_len
+            )
             if word_dir == WordDirection.VERTICAL:
-                vertical_words.append(pos_word_layout)
-                vertical_index[x_init].append(pos_word_layout)
+                vertical_words.append(pos_word_layout_data)
+                vertical_index[x_init].append(pos_word_layout_data)
             else:
-                horizontal_words.append(pos_word_layout)
-                horizontal_index[y_init].append(pos_word_layout)
-    print("vertical index = ", vertical_index)
-    print("horizontal index = ", horizontal_index)
-    print("vertical words = ", vertical_words)
-    print("horizontal words = ", horizontal_words)
+                horizontal_words.append(pos_word_layout_data)
+                horizontal_index[y_init].append(pos_word_layout_data)
+    # print("vertical index = ", vertical_index)
+    # print("horizontal index = ", horizontal_index)
+    # print("vertical words = ", vertical_words)
+    # print("horizontal words = ", horizontal_words)
 
-    # for word_layout in words_layout:
-    #     for pos_word_layout in word_layout:
-    #         word_dir, x_init, y_init, word_len = pos_word_layout
+    for vertical_word in vertical_words:
+        # _, x_init, y_init, word_len, word_num = vertical_word
+        y_init = vertical_word.y_init
+        x_init = vertical_word.x_init
+        word_len = vertical_word.word_len
+        for y in range(y_init, y_init + word_len):
+            horizontal_words_in_y = horizontal_index[y]
+            for horizontal_word_in_y in horizontal_words_in_y:
+                # _, hw_i_x, hw_i_y, hw_len, hw_n = horizontal_word_in_y
+                hw_i_x = horizontal_word_in_y.x_init
+                hw_len = horizontal_word_in_y.word_len
+                if hw_i_x <= x_init < hw_i_x + hw_len:
+                    # print(f"Vertical word {vertical_word} intersects {horizontal_word_in_y} "
+                    #       f"at y = {y}, horizontal word pos: {x_init - hw_i_x}")
+                    vertical_word_intersect_pos = y - y_init
+                    horizontal_word_intersect_pos = x_init - hw_i_x
+                    vertical_word.word_intersects[vertical_word_intersect_pos] = (horizontal_word_in_y, horizontal_word_intersect_pos)
+                    horizontal_word_in_y.word_intersects[horizontal_word_intersect_pos] = (vertical_word, vertical_word_intersect_pos)
+                    break
+    # print("=========================")
+    # for word in vertical_words:
+    #     print("Vertical word: ", word)
+    # for word in horizontal_words:
+    #     print("Horizontal word: ", word)
+
+    return [
+        horizontal_words,
+        vertical_words
+    ]

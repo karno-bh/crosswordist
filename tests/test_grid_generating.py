@@ -1,4 +1,5 @@
 import random
+import time
 import unittest
 import math
 
@@ -180,4 +181,19 @@ class TestGridGenerating(unittest.TestCase):
         grid = FlatMatrix(size, size, new_state=grid_data)
         words_layout = get_all_checked_words_layout(grid)
         print("words layout = ", words_layout)
-        create_cross_words_index(words_layout, grid)
+        cross_words_index = create_cross_words_index(words_layout, grid)
+        print(cross_words_index)
+
+    def test_memory_of_index(self):
+        t0 = time.time()
+        for num in range(10000):
+            if num % 100 == 0:
+                logger.info("Generated numbers = %s", num)
+                # print("test_all_checked_generated_words::Generated_nums = ", num)
+            grid_size = 15
+            symmetry = random.choice(["X", "NO"])
+            grid = create_random_grid(grid_size, symmetry=symmetry)
+            words_layout = get_all_checked_words_layout(grid)
+            cross_words_index = create_cross_words_index(words_layout, grid)
+            # print(cross_words_index)
+        print("total time: ", time.time() - t0)
