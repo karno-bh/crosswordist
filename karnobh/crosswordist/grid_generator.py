@@ -2,9 +2,11 @@ import random
 from dataclasses import dataclass
 from karnobh.crosswordist.affine_2d import FlatMatrix, translate, ROT_INT_90, point
 
+
 class WordDirection:
     HORIZONTAL = 0
     VERTICAL = 1
+
 
 @dataclass(slots=True, init=False, repr=False)
 class WordLayout:
@@ -15,6 +17,7 @@ class WordLayout:
     word_len: int
     word_letters: list[str]
     word_intersects: list[tuple]
+    _filled_letters: int
 
     def __init__(self, word_num, direction, x_init, y_init, word_len):
         # super().__init__()
@@ -25,6 +28,7 @@ class WordLayout:
         self.word_len = word_len
         self.word_letters = [""] * self.word_len
         self.word_intersects = [()] * self.word_len
+        self._filled_letters = 0
 
     def __repr__(self):
         word_intersects_repr = []
@@ -38,12 +42,55 @@ class WordLayout:
                 repr_state = ()
             word_intersects_repr.append(repr_state)
 
-        return (f"WordLayout({self.word_num}, {self.direction}, {self.x_init}, "
-                f"{self.y_init}, {self.word_letters}, {word_intersects_repr})")
+        return (f"WordLayout({self.word_num}, {'H' if self.direction == WordDirection.HORIZONTAL else 'V'}, {self.x_init}, "
+                f"{self.y_init}, {self.word_len}, {self.word_letters}, {word_intersects_repr})")
 
     def __del__(self):
         for i in range(len(self.word_intersects)):
             self.word_intersects[i] = None
+
+    def set_letter(self, letter: str, index: int, propagate=True):
+        # if len(letter) > 1:
+        #     raise Exception("Letter len cannot be greater than 1")
+        if letter == "" and self.word_letters[index] != "" and self._filled_letters >= 0:
+            self._filled_letters -= 1
+            self.word_letters[index] = letter
+        else:
+            if self.word_letters[index] == "":
+                self.word_letters[index] = letter
+                self._filled_letters += 1
+                # if self._filled_letters > self.word_len:
+                #     raise Exception(f"Error in filled letters: {self}, {self.filled_letters}")
+            elif self.word_letters[index] != letter:
+                raise Exception(f"There is already letter '{self.word_letters[index]}' "
+                                f"at index {index}. Trying to set letter '{letter}'. {self}")
+        if propagate:
+            crossing_word_layout, crossing_word_index = self.word_intersects[index]
+            crossing_word_layout.set_letter(letter, crossing_word_index, propagate=False)
+
+    def set_word(self, word):
+        for i, l in enumerate(word):
+            self.set_letter(l, i)
+
+    def unset_word(self):
+        print(f"Unset called: {self}")
+        for i in range(len(self.word_letters)):
+            self.set_letter("", i)
+
+    @property
+    def filled_letters(self):
+        # return self._filled_letters
+        return sum(1 for l in self.word_letters if l != '')
+
+    @property
+    def mapping(self):
+        return {i: l for i, l in enumerate(self.word_letters) if l}
+
+
+@dataclass
+class CrossWordsIndex:
+    horizontal_words: list[WordLayout]
+    vertical_words: list[WordLayout]
 
 
 def create_random_grid(size, black_ratio=1 / 6, all_checked=True, symmetry='X',
@@ -130,8 +177,8 @@ def get_all_checked_words_layout(grid: FlatMatrix) -> list[list[tuple]]:
 def create_cross_words_index(words_layout: list[list[tuple]], grid: FlatMatrix):
     width, height = grid.size
     vertical_index, horizontal_index = [[] for _ in range(width)], [[] for _ in range(height)]
-    vertical_words = []
-    horizontal_words = []
+    vertical_words: list[WordLayout] = []
+    horizontal_words: list[WordLayout] = []
     for word_num, word_layout in enumerate(words_layout):
         for pos_word_layout in word_layout:
             word_dir, x_init, y_init, word_len = pos_word_layout
@@ -178,7 +225,7 @@ def create_cross_words_index(words_layout: list[list[tuple]], grid: FlatMatrix):
     # for word in horizontal_words:
     #     print("Horizontal word: ", word)
 
-    return [
-        horizontal_words,
-        vertical_words
-    ]
+    return CrossWordsIndex(
+        horizontal_words=horizontal_words,
+        vertical_words=vertical_words
+    )

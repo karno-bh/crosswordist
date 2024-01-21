@@ -62,10 +62,12 @@ class FlatMatrix:
 
     def pretty_log(self, replace):
         buf = []
-        for j in range(self._height - 1, -1, -1):
+        for j in range(self._height):
             for i in range(self._width):
                 placeholder = "{0}" if i == 0 else " {0}"
-                buf += placeholder.format(replace[self._data[self.__idx(i, j)]])
+                val = self._data[self.__idx(i, j)]
+                replace_val = replace.get(val, val)
+                buf += placeholder.format(replace_val)
             buf += "\n"
         return ''.join(buf)
 
