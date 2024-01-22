@@ -81,7 +81,11 @@ class WordsIndexSameLen:
             self._bitmap_index.append(letter_index)
 
     def bitmap_on_position(self, letter_index, letter):
-        return self._bitmap_index[letter_index][letter]
+        try:
+            return self._bitmap_index[letter_index][letter]
+        except:
+            print(f"letter index: {letter_index}, letter {letter}")
+            raise
 
     def word_at(self, word_index):
         return self._words[word_index]

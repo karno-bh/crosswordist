@@ -1,4 +1,5 @@
 import itertools
+import random
 
 from karnobh.crosswordist.affine_2d import FlatMatrix
 from karnobh.crosswordist.words_index import WordsIndex
@@ -90,6 +91,43 @@ def _find_solution(word_index: WordsIndex, cross_words_index: CrossWordsIndex,
     return -1
 
 
+def _find_solution2(word_index: WordsIndex, cross_words_index: CrossWordsIndex,
+                    orig_grid: FlatMatrix,
+                    current_word: WordLayout, in_crossword_words):
+    words_to_check = _get_words_from_index(word_layout=current_word,
+                                           word_index=word_index)
+    random.shuffle(words_to_check)
+    # print(_as_flat_matrix(cross_words_index, orig_grid).pretty_log({0: "*", "": "_"}))
+    # print("filled words: ", filled_words)
+    # print("non filled words: ", non_filled_words)
+    for word_to_check in words_to_check:
+        if word_to_check in in_crossword_words:
+            continue
+        current_word.set_word(word_to_check)
+        words_intersect_not_good = False
+        for current_word_intersect in current_word.word_intersects:
+            current_word_intersect_layout, _ = current_word_intersect
+            if _check_possibilities(current_word_intersect_layout, word_index) == 0:
+                current_word.unset_word()
+                words_intersect_not_good = True
+                break
+        if words_intersect_not_good:
+            continue
+        next_word_layout, possibilities = _min_possible_word_layout_non_full(cross_words_index.all,
+                                                                             word_index)
+        if next_word_layout is None:
+            print("Solution: ")
+            print(_as_flat_matrix(cross_words_index, orig_grid).pretty_log({0: "*", "": "_"}))
+            return True
+
+        res = _find_solution2(word_index, cross_words_index, orig_grid, next_word_layout, in_crossword_words)
+        if res:
+            return res
+        current_word.unset_word()
+    print(_as_flat_matrix(cross_words_index, orig_grid).pretty_log({0: "*", "": "_"}))
+    return False
+
+
 def _get_words_from_index(word_layout: WordLayout, word_index: WordsIndex):
     if word_layout.filled_letters:
         return list(word_index.lookup_native(
@@ -97,7 +135,7 @@ def _get_words_from_index(word_layout: WordLayout, word_index: WordsIndex):
             mapping=word_layout.mapping
         ))
     else:
-        return word_index.word_index_by_length(word_layout.word_len)
+        return list(word_index.word_index_by_length(word_layout.word_len))
 
 
 def _check_possibilities(word_layout: WordLayout, word_index: WordsIndex):
@@ -119,6 +157,18 @@ def _min_possible_word_layout(word_layouts, word_index: WordsIndex):
                key=lambda _wp: _wp[1])
 
 
+def _min_possible_word_layout_non_full(word_layouts, word_index: WordsIndex):
+    layouts_with_possibilities = [(w, _check_possibilities(w, word_index)) for w in word_layouts if not w.full]
+    if not layouts_with_possibilities:
+        return None, -1
+    return min(layouts_with_possibilities, key=lambda _wp: _wp[1])
+
+
+def random_possible_word_layout(word_layouts, word_index: WordsIndex):
+    word_layouts = [(w, _check_possibilities(w, word_index)) for w in word_layouts if not w.full]
+    return random.choice(word_layouts)
+
+
 def find_solution(word_index: WordsIndex, cross_words_index: CrossWordsIndex,
                   orig_grid: FlatMatrix):
     non_filled_words = {_as_index_tuple(w) for w in itertools.chain(
@@ -130,9 +180,7 @@ def find_solution(word_index: WordsIndex, cross_words_index: CrossWordsIndex,
     # start_word_layout = min((w for w in itertools.chain(cross_words_index.horizontal_words,
     #                                                     cross_words_index.vertical_words)),
     #                         key=lambda _w: _check_possibilities(_w, word_index))
-    start_word_layout, possibilities = _min_possible_word_layout(
-        itertools.chain(cross_words_index.horizontal_words,
-                        cross_words_index.vertical_words), word_index)
+    start_word_layout, possibilities = _min_possible_word_layout_non_full(cross_words_index.all, word_index)
     print("possibilities", possibilities)
     non_filled_words.remove(_as_index_tuple(start_word_layout))
     filled_words.add(_as_index_tuple(start_word_layout))
@@ -141,3 +189,23 @@ def find_solution(word_index: WordsIndex, cross_words_index: CrossWordsIndex,
                           start_word_layout,
                           filled_words, non_filled_words)
 
+
+def find_solution2(word_index: WordsIndex, cross_words_index: CrossWordsIndex,
+                   orig_grid: FlatMatrix):
+    # non_filled_words = {_as_index_tuple(w) for w in itertools.chain(
+    #     cross_words_index.horizontal_words, cross_words_index.vertical_words)}
+    # filled_words = set()
+    # for w in itertools.chain(
+    #         cross_words_index.horizontal_words, cross_words_index.vertical_words):
+    #     print(_check_possibilities(w, word_index))
+    # start_word_layout = min((w for w in itertools.chain(cross_words_index.horizontal_words,
+    #                                                     cross_words_index.vertical_words)),
+    #                         key=lambda _w: _check_possibilities(_w, word_index))
+    # for _ in range(5):
+    next_word_layout, possibilities = _min_possible_word_layout_non_full(cross_words_index.all,
+                                                                         word_index)
+    # print("possibilities", possibilities)
+    in_crossword_words = {}
+    return _find_solution2(word_index, cross_words_index,
+                           orig_grid,
+                           next_word_layout, in_crossword_words)

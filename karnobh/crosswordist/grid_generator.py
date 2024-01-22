@@ -1,3 +1,4 @@
+import itertools
 import random
 from dataclasses import dataclass
 from karnobh.crosswordist.affine_2d import FlatMatrix, translate, ROT_INT_90, point
@@ -18,6 +19,7 @@ class WordLayout:
     word_letters: list[str]
     word_intersects: list[tuple]
     _filled_letters: int
+    _mapping: dict[int, str]
 
     def __init__(self, word_num, direction, x_init, y_init, word_len):
         # super().__init__()
@@ -29,6 +31,7 @@ class WordLayout:
         self.word_letters = [""] * self.word_len
         self.word_intersects = [()] * self.word_len
         self._filled_letters = 0
+        self._mapping = {}
 
     def __repr__(self):
         word_intersects_repr = []
@@ -55,9 +58,11 @@ class WordLayout:
         if letter == "" and self.word_letters[index] != "" and self._filled_letters >= 0:
             self._filled_letters -= 1
             self.word_letters[index] = letter
+            del self._mapping[index]
         else:
             if self.word_letters[index] == "":
                 self.word_letters[index] = letter
+                self._mapping[index] = letter
                 self._filled_letters += 1
                 # if self._filled_letters > self.word_len:
                 #     raise Exception(f"Error in filled letters: {self}, {self.filled_letters}")
@@ -73,7 +78,7 @@ class WordLayout:
             self.set_letter(l, i)
 
     def unset_word(self):
-        print(f"Unset called: {self}")
+        # print(f"Unset called: {self}")
         for i in range(len(self.word_letters)):
             self.set_letter("", i)
 
@@ -81,16 +86,26 @@ class WordLayout:
     def filled_letters(self):
         # return self._filled_letters
         return sum(1 for l in self.word_letters if l != '')
+        # return len(self._mapping)
 
     @property
     def mapping(self):
         return {i: l for i, l in enumerate(self.word_letters) if l}
+        # return self._mapping
+
+    @property
+    def full(self):
+        return self.filled_letters == self.word_len
 
 
 @dataclass
 class CrossWordsIndex:
     horizontal_words: list[WordLayout]
     vertical_words: list[WordLayout]
+
+    @property
+    def all(self):
+        return itertools.chain(self.horizontal_words, self.vertical_words)
 
 
 def create_random_grid(size, black_ratio=1 / 6, all_checked=True, symmetry='X',
