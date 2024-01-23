@@ -1,5 +1,6 @@
 import itertools
 import random
+import time
 
 from karnobh.crosswordist.affine_2d import FlatMatrix
 from karnobh.crosswordist.words_index import WordsIndex
@@ -93,22 +94,24 @@ def _find_solution(word_index: WordsIndex, cross_words_index: CrossWordsIndex,
 
 def _find_solution2(word_index: WordsIndex, cross_words_index: CrossWordsIndex,
                     orig_grid: FlatMatrix,
-                    current_word: WordLayout, in_crossword_words):
+                    current_word: WordLayout, in_crossword_words, path, start_time):
     words_to_check = _get_words_from_index(word_layout=current_word,
                                            word_index=word_index)
     random.shuffle(words_to_check)
+    # print("Path = ", path)
     # print(_as_flat_matrix(cross_words_index, orig_grid).pretty_log({0: "*", "": "_"}))
     # print("filled words: ", filled_words)
     # print("non filled words: ", non_filled_words)
     for word_to_check in words_to_check:
         if word_to_check in in_crossword_words:
             continue
+        prev_state = list(current_word.word_letters)
         current_word.set_word(word_to_check)
         words_intersect_not_good = False
         for current_word_intersect in current_word.word_intersects:
             current_word_intersect_layout, _ = current_word_intersect
             if _check_possibilities(current_word_intersect_layout, word_index) == 0:
-                current_word.unset_word()
+                current_word.unset_word(prev_state)
                 words_intersect_not_good = True
                 break
         if words_intersect_not_good:
@@ -116,16 +119,22 @@ def _find_solution2(word_index: WordsIndex, cross_words_index: CrossWordsIndex,
         next_word_layout, possibilities = _min_possible_word_layout_non_full(cross_words_index.all,
                                                                              word_index)
         if next_word_layout is None:
-            print("Solution: ")
-            print(_as_flat_matrix(cross_words_index, orig_grid).pretty_log({0: "*", "": "_"}))
-            return True
-
-        res = _find_solution2(word_index, cross_words_index, orig_grid, next_word_layout, in_crossword_words)
-        if res:
+            # print("Solution: ")
+            # print(_as_flat_matrix(cross_words_index, orig_grid).pretty_log({0: "*", "": "_"}))
+            return 0
+        # next_path = list(path)
+        # next_path.append(next_word_layout)
+        # print("Next word layout: ", next_word_layout)
+        res = _find_solution2(word_index, cross_words_index, orig_grid, next_word_layout,
+                              in_crossword_words, path, start_time)
+        if res == 0 or res == 2:
             return res
-        current_word.unset_word()
-    print(_as_flat_matrix(cross_words_index, orig_grid).pretty_log({0: "*", "": "_"}))
-    return False
+        current_word.unset_word(prev_state)
+    if time.time() - start_time > 60:
+        print("Timeout: ", time.time() - start_time)
+        return 2
+    # print(_as_flat_matrix(cross_words_index, orig_grid).pretty_log({0: "*", "": "_"}))
+    return 1
 
 
 def _get_words_from_index(word_layout: WordLayout, word_index: WordsIndex):
@@ -206,6 +215,10 @@ def find_solution2(word_index: WordsIndex, cross_words_index: CrossWordsIndex,
                                                                          word_index)
     # print("possibilities", possibilities)
     in_crossword_words = {}
+    path = [next_word_layout]
     return _find_solution2(word_index, cross_words_index,
                            orig_grid,
-                           next_word_layout, in_crossword_words)
+                           next_word_layout, in_crossword_words, path, time.time())
+    # if res == 1 or res == 0:
+    #     return res
+    # print("==== Regenerating ====")

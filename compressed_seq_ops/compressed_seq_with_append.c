@@ -95,22 +95,14 @@ size_t CompressedSeqIter_seekable_bytes(CompressedSeqIter* seq_iter) {
 
 static PyObject* bit_index_native(PyObject* self, PyObject* args) {
     PyObject* compressed_seq;
-    unsigned int alloc_size;
 
-    if (!PyArg_ParseTuple(args, "OI", &compressed_seq, &alloc_size)) {
-        return NULL;
-    }
-
-    unsigned int *result_list_native = malloc(sizeof(unsigned int) * alloc_size);
-    if (NULL == result_list_native) {
-        PyErr_SetString(PyExc_MemoryError, "Cannot allocate result list");
+    if (!PyArg_ParseTuple(args, "O", &compressed_seq)) {
         return NULL;
     }
 
 
     Py_buffer buffer;
     if (PyObject_GetBuffer(compressed_seq, &buffer, PyBUF_SIMPLE) < 0) {
-        free(result_list_native);
         return NULL;
     }
 
@@ -119,12 +111,12 @@ static PyObject* bit_index_native(PyObject* self, PyObject* args) {
 
     PyBuffer_Release(&buffer);
 
-    // PyObject* result_list = PyList_New(0);
-    // if (NULL == result_list) {
-    //     PyErr_SetString(PyExc_MemoryError, "Cannot allocate result list");
-    //     return NULL;
-    // }
-    size_t result_index = 0;
+    PyObject* result_list = PyList_New(0);
+    if (NULL == result_list) {
+        PyErr_SetString(PyExc_MemoryError, "Cannot allocate result list");
+        return NULL;
+    }
+
     for(int byte_index = 0, decompressed_val_i;
         (decompressed_val_i = CompressedSeqIter_next(&seq_iter)) >= 0;) {
         unsigned char decompressed_val = (unsigned char) decompressed_val_i;
@@ -138,48 +130,26 @@ static PyObject* bit_index_native(PyObject* self, PyObject* args) {
             for (int bit_num = 7; bit_num >= 0; bit_num--) {
                 if ((decompressed_val >> bit_num) & 1) {
                     unsigned int output_val = byte_index * 8 + (7 - bit_num);
-                    if (result_index == alloc_size) {
-                        free(result_list_native);
-                        PyErr_SetString(PyExc_MemoryError, "The number of results greater than allocated size");
-                        return NULL;
+                    PyObject* py_long = PyLong_FromLong(output_val);
+                    if (NULL == py_long) {
+                        goto release_list;
                     }
-                    result_list_native[result_index++] = output_val;
-                    // PyObject* py_long = PyLong_FromLong(output_val);
-                    // if (NULL == py_long) {
-                    //     goto release_list;
-                    // }
-                    // int res_append = PyList_Append(result_list, py_long);
-                    // Py_DECREF(py_long);
-                    // if (res_append < 0) {
-                    //     goto release_list;
-                    // }
+                    int res_append = PyList_Append(result_list, py_long);
+                    Py_DECREF(py_long);
+                    if (res_append < 0) {
+                        goto release_list;
+                    }
                 }
             }
         }
         byte_index++;
     }
 
-    PyObject* result_list = PyList_New(result_index);
-    if (NULL == result_list) {
-        free(result_list_native);
-        PyErr_SetString(PyExc_MemoryError, "Cannot create result list");
-        return NULL;
+    if (false) {
+        release_list:
+            PyErr_SetString(PyExc_MemoryError, "Cannot create result list");
+            Py_CLEAR(result_list); // result_list will also be NULL after clear
     }
-    for (size_t i = 0; i < result_index; i++) {
-        PyObject* py_long = PyLong_FromLong(result_list_native[i]);
-        if (NULL == py_long) {
-            free(result_list_native);
-            PyErr_SetString(PyExc_MemoryError, "Cannot create result list element");
-            Py_CLEAR(result_list);
-        }
-        int set_res = PyList_SetItem(result_list, i, py_long);
-        if (set_res < 0) {
-            free(result_list_native);
-            Py_CLEAR(result_list);
-            return NULL;
-        }
-    }
-    free(result_list_native);
 
     return result_list;
 }
@@ -188,30 +158,22 @@ static PyObject* bit_index_native(PyObject* self, PyObject* args) {
 static PyObject* bit_and_op_index_native(PyObject* self, PyObject* args) {
 
     PyObject* iterable_of_buffers;
-    unsigned int alloc_size;
     
-    if (!PyArg_ParseTuple(args, "OI", &iterable_of_buffers, &alloc_size)) {
+    if (!PyArg_ParseTuple(args, "O", &iterable_of_buffers)) {
         return NULL;
     }
-    
 
     if (!PySequence_Check(iterable_of_buffers)) {
         PyErr_SetString(PyExc_TypeError, "bit_and_op_index_native expects a sequence");
         return NULL;
     }
 
-    unsigned int *result_list_native = malloc(sizeof(unsigned int) * alloc_size);
-    if (NULL == result_list_native) {
-        PyErr_SetString(PyExc_MemoryError, "Cannot allocate result list");
-        return NULL;
-    }
     size_t iters_num = 0;
     CompressedSeqIter seq_iters[MAX_ITERS];
     int iter_results[MAX_ITERS];
 
     PyObject *iter = PyObject_GetIter(iterable_of_buffers);
     if (NULL == iter) {
-        free(result_list_native);
         return NULL;
     }
 
@@ -219,16 +181,11 @@ static PyObject* bit_and_op_index_native(PyObject* self, PyObject* args) {
 
         Py_buffer buffer;
         if (PyObject_GetBuffer(next, &buffer, PyBUF_SIMPLE) < 0) {
-            free(result_list_native);
-            Py_DECREF(next);
-            Py_DECREF(iter);
             return NULL;
         }
         if (iters_num == MAX_ITERS) {
-            free(result_list_native);
             PyBuffer_Release(&buffer);
-            Py_DECREF(next);
-            Py_DECREF(iter);
+            
             PyErr_SetString(PyExc_BufferError, "Too many buffers to process");
             return NULL;
         }
@@ -236,19 +193,15 @@ static PyObject* bit_and_op_index_native(PyObject* self, PyObject* args) {
         iters_num++;
 
         PyBuffer_Release(&buffer);
-        Py_DECREF(next);
     }
-    Py_DECREF(iter);
 
     if (iters_num < 2) {
-        free(result_list_native);
         PyErr_SetString(PyExc_BufferError, "Too few buffers to process, should be at least 2");
         return NULL;
     }
 
-    // PyObject* result_list = PyList_New(0);
+    PyObject* result_list = PyList_New(0);
     int byte_index = 0;
-    size_t result_index = 0;
     while(1) {
         for (size_t i = 0; i < iters_num; i++) {
             iter_results[i] = CompressedSeqIter_next(&seq_iters[i]);
@@ -281,54 +234,26 @@ static PyObject* bit_and_op_index_native(PyObject* self, PyObject* args) {
             for (int bit_num = 7; bit_num >= 0; bit_num--) {
                 if ((byte >> bit_num) & 1) {
                     unsigned int output_val = byte_index * 8 + (7 - bit_num);
-                    if (result_index == alloc_size) {
-                        free(result_list_native);
-                        PyErr_SetString(PyExc_MemoryError, "The number of results greater than allocated size");
-                        return NULL;
+                    PyObject* py_long = PyLong_FromLong(output_val);
+                    if (NULL == py_long) {
+                        goto release_list;
                     }
-                    result_list_native[result_index++] = output_val;
-                    // PyObject* py_long = PyLong_FromLong(output_val);
-                    // if (NULL == py_long) {
-                    //     goto release_list;
-                    // }
-                    // int res_append = PyList_Append(result_list, py_long);
-                    // Py_DECREF(py_long);
-                    // if (res_append < 0) {
-                    //     goto release_list;
-                    // }
+                    int res_append = PyList_Append(result_list, py_long);
+                    Py_DECREF(py_long);
+                    if (res_append < 0) {
+                        goto release_list;
+                    }
                 }
             }
         }
         byte_index++;
     }
 
-    // if (false) {
-    //     release_list:
-    //         PyErr_SetString(PyExc_MemoryError, "Cannot create result list");
-    //         Py_CLEAR(result_list);
-    // }
-
-    PyObject* result_list = PyList_New(result_index);
-    if (NULL == result_list) {
-        free(result_list_native);
-        PyErr_SetString(PyExc_MemoryError, "Cannot create result list");
-        return NULL;
-    }
-    for (size_t i = 0; i < result_index; i++) {
-        PyObject* py_long = PyLong_FromLong(result_list_native[i]);
-        if (NULL == py_long) {
-            free(result_list_native);
-            PyErr_SetString(PyExc_MemoryError, "Cannot create result list element");
+    if (false) {
+        release_list:
+            PyErr_SetString(PyExc_MemoryError, "Cannot create result list");
             Py_CLEAR(result_list);
-        }
-        int set_res = PyList_SetItem(result_list, i, py_long);
-        if (set_res < 0) {
-            free(result_list_native);
-            Py_CLEAR(result_list);
-            return NULL;
-        }
     }
-    free(result_list_native);
 
     return result_list;
 }

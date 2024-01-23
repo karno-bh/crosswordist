@@ -48,9 +48,9 @@ class WordLayout:
         return (f"WordLayout({self.word_num}, {'H' if self.direction == WordDirection.HORIZONTAL else 'V'}, {self.x_init}, "
                 f"{self.y_init}, {self.word_len}, {self.word_letters}, {word_intersects_repr})")
 
-    def __del__(self):
-        for i in range(len(self.word_intersects)):
-            self.word_intersects[i] = None
+    # def __del__(self):
+    #     for i in range(len(self.word_intersects)):
+    #         self.word_intersects[i] = None
 
     def set_letter(self, letter: str, index: int, propagate=True):
         # if len(letter) > 1:
@@ -77,10 +77,13 @@ class WordLayout:
         for i, l in enumerate(word):
             self.set_letter(l, i)
 
-    def unset_word(self):
-        # print(f"Unset called: {self}")
-        for i in range(len(self.word_letters)):
-            self.set_letter("", i)
+    def unset_word(self, prev_state):
+        # print(f"Unset called: {prev_state} === {self}")
+        # for i in range(len(self.word_letters)):
+        #     self.set_letter("", i)
+        for i, l in enumerate(prev_state):
+            if l == '':
+                self.set_letter('', i)
 
     @property
     def filled_letters(self):

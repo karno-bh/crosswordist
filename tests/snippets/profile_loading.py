@@ -1,4 +1,5 @@
 import cProfile
+import random
 import karnobh.crosswordist.log_config as log_config
 log_config.LOGGING_CONFIG['loggers']['karnobh.crosswordist']['level'] = 'INFO'
 log_config.set_logger()
@@ -9,8 +10,15 @@ from karnobh.crosswordist.bitmap import bit_index, bit_op_index2
 import operator
 
 
-def run_load():
+def filter_by_factor(factor):
     with open('/tmp/words_tests/words_upper.txt') as f:
+        with open('/tmp/words_tests/words_upper_filtered.txt', 'w') as f2:
+            for word in f:
+                if random.randint(1, factor) == factor:
+                    print(word.strip(), file=f2)
+
+def run_load():
+    with open('/tmp/words_tests/words_upper_filtered.txt') as f:
         with WordsIndex.as_context() as wi:
             for word in f:
                 wi.add_word(word.strip())
@@ -26,4 +34,6 @@ def run_load():
 
 
 if __name__ == '__main__':
+    filter_by_factor(1)
     run_load()
+

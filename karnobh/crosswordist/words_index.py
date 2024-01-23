@@ -222,14 +222,16 @@ class WordsIndex:
 
     def lookup_native(self, length, mapping):
         words_index_same_len = self.word_index_by_length(length)
+        max_alloc = len(words_index_same_len.words)
         byte_sequences = [words_index_same_len.bitmap_on_position(pos, letter).compressed_sequence for pos, letter in mapping.items()]
         # print(byte_sequences)
-        arr_index_stream = bit_and_op_index_native(byte_sequences) if len(byte_sequences) != 1 else bit_index_native(byte_sequences[0])
+        arr_index_stream = bit_and_op_index_native(byte_sequences, max_alloc) if len(byte_sequences) != 1 else bit_index_native(byte_sequences[0], max_alloc)
         # print("length", length)
         # print("mapping", mapping)
         # print("arr_index_stream", arr_index_stream)
         for arr_index in arr_index_stream:
             yield words_index_same_len._words[arr_index]
+        # return [words_index_same_len._words[arr_index] for arr_index in arr_index_stream]
 
 
     @staticmethod
