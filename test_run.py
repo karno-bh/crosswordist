@@ -18,10 +18,10 @@ def test_run():
     with open('/tmp/words_tests/index.json') as f:
         wi_loaded = WordsIndex(file=f)
     found_times = 0
-    for num in range(10):
-        if num % 10 == 0:
+    for num in range(100):
+        # if num % 10 == 0:
             # logger.info("Generated numbers = %s", num)
-            print("test_finding_solution_with_generating::Generated_nums = ", num)
+        print("test_finding_solution_with_generating::Generated_nums = ", num)
         grid_size = 15
         symmetry = random.choice(["X", "NO"])
         grid = create_random_grid(grid_size, symmetry="X")

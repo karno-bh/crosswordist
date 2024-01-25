@@ -11,6 +11,9 @@ from crosswordist_native_index.compressed_seq import bit_index_native, bit_and_o
 
 logger = logging.getLogger(__name__)
 
+_GET_LIST = 0
+_GET_COUNT = 1
+_DOES_EXIST = 2
 
 class WordsIndexWrongLen(Exception):
     pass
@@ -220,12 +223,19 @@ class WordsIndex:
         for arr_index in arr_index_stream:
             yield words_index_same_len._words[arr_index]
 
-    def lookup_native(self, length, mapping):
+    def _perform_native_lookup(self, length, mapping, lookup_type):
         words_index_same_len = self.word_index_by_length(length)
         max_alloc = len(words_index_same_len.words)
-        byte_sequences = [words_index_same_len.bitmap_on_position(pos, letter).compressed_sequence for pos, letter in mapping.items()]
+        byte_sequences = [words_index_same_len.bitmap_on_position(pos, letter).compressed_sequence
+                          for pos, letter in mapping.items()]
         # print(byte_sequences)
-        arr_index_stream = bit_and_op_index_native(byte_sequences, max_alloc) if len(byte_sequences) != 1 else bit_index_native(byte_sequences[0], max_alloc)
+        arr_index_stream = bit_and_op_index_native(byte_sequences, max_alloc, lookup_type) \
+            if len(byte_sequences) != 1 else bit_index_native(byte_sequences[0], max_alloc,
+                                                              lookup_type)
+        return arr_index_stream, words_index_same_len
+
+    def lookup_native(self, length, mapping):
+        arr_index_stream, words_index_same_len = self._perform_native_lookup(length, mapping, _GET_LIST)
         # print("length", length)
         # print("mapping", mapping)
         # print("arr_index_stream", arr_index_stream)
@@ -233,6 +243,13 @@ class WordsIndex:
             yield words_index_same_len._words[arr_index]
         # return [words_index_same_len._words[arr_index] for arr_index in arr_index_stream]
 
+    def count_occurrences_native(self, length, mapping):
+        occurrences, _ = self._perform_native_lookup(length, mapping, _GET_COUNT)
+        return occurrences
+
+    def does_intersection_exist(self, length, mapping):
+        exists, _ = self._perform_native_lookup(length, mapping, _DOES_EXIST)
+        return exists
 
     @staticmethod
     @contextmanager

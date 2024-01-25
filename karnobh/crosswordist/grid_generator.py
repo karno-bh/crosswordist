@@ -1,6 +1,8 @@
 import itertools
 import random
 from dataclasses import dataclass
+import weakref
+from typing import Any
 from karnobh.crosswordist.affine_2d import FlatMatrix, translate, ROT_INT_90, point
 
 
@@ -20,6 +22,7 @@ class WordLayout:
     word_intersects: list[tuple]
     _filled_letters: int
     _mapping: dict[int, str]
+    __weakref__: Any
 
     def __init__(self, word_num, direction, x_init, y_init, word_len):
         # super().__init__()
@@ -234,8 +237,14 @@ def create_cross_words_index(words_layout: list[list[tuple]], grid: FlatMatrix):
                     #       f"at y = {y}, horizontal word pos: {x_init - hw_i_x}")
                     vertical_word_intersect_pos = y - y_init
                     horizontal_word_intersect_pos = x_init - hw_i_x
-                    vertical_word.word_intersects[vertical_word_intersect_pos] = (horizontal_word_in_y, horizontal_word_intersect_pos)
-                    horizontal_word_in_y.word_intersects[horizontal_word_intersect_pos] = (vertical_word, vertical_word_intersect_pos)
+                    vertical_word.word_intersects[vertical_word_intersect_pos] = (
+                        weakref.proxy(horizontal_word_in_y),
+                        horizontal_word_intersect_pos
+                    )
+                    horizontal_word_in_y.word_intersects[horizontal_word_intersect_pos] = (
+                        weakref.proxy(vertical_word),
+                        vertical_word_intersect_pos
+                    )
                     break
     # print("=========================")
     # for word in vertical_words:

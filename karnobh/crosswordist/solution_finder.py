@@ -110,7 +110,8 @@ def _find_solution2(word_index: WordsIndex, cross_words_index: CrossWordsIndex,
         words_intersect_not_good = False
         for current_word_intersect in current_word.word_intersects:
             current_word_intersect_layout, _ = current_word_intersect
-            if _check_possibilities(current_word_intersect_layout, word_index) == 0:
+            # if _check_possibilities(current_word_intersect_layout, word_index) == 0:
+            if not _has_possibility(current_word_intersect_layout, word_index):
                 current_word.unset_word(prev_state)
                 words_intersect_not_good = True
                 break
@@ -149,12 +150,26 @@ def _get_words_from_index(word_layout: WordLayout, word_index: WordsIndex):
 
 def _check_possibilities(word_layout: WordLayout, word_index: WordsIndex):
     if word_layout.filled_letters:
-        return len(list(word_index.lookup_native(
+        # return len(list(word_index.lookup_native(
+        #     length=word_layout.word_len,
+        #     mapping=word_layout.mapping
+        # )))
+        return word_index.count_occurrences_native(
             length=word_layout.word_len,
             mapping=word_layout.mapping
-        )))
+        )
     else:
         return len(word_index.word_index_by_length(word_layout.word_len).words)
+
+
+def _has_possibility(word_layout: WordLayout, word_index: WordsIndex):
+    if word_layout.filled_letters:
+        return word_index.does_intersection_exist(
+            length=word_layout.word_len,
+            mapping=word_layout.mapping
+        )
+    else:
+        return len(word_index.word_index_by_length(word_layout.word_len).words) != 0
 
 
 def _as_index_tuple(word_layout: WordLayout) -> tuple[int, WordDirection]:
