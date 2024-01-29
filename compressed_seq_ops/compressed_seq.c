@@ -157,7 +157,9 @@ PyObject* _calc_bit_index_result(int request,
                         goto end_of_loop;
                     }
                     if (result_index == alloc_size) {
-                        free(result_list_native);
+                        if (request == GET_LIST) {
+                            free(result_list_native);
+                        }
                         PyErr_SetString(PyExc_MemoryError, "The number of results greater than allocated size");
                         return NULL;
                     }
@@ -265,7 +267,6 @@ static PyObject* bit_and_op_index_native(PyObject* self, PyObject* args) {
 
     size_t iters_num = 0;
     CompressedSeqIter seq_iters[MAX_ITERS];
-    int iter_results[MAX_ITERS];
 
     PyObject *iter = PyObject_GetIter(iterable_of_buffers);
     if (NULL == iter) {
@@ -322,6 +323,5 @@ static PyModuleDef compressed_seq = {
 };
 
 PyMODINIT_FUNC PyInit_compressed_seq() {
-    // printf("This is a test!\n");
     return PyModule_Create(&compressed_seq);
 }
