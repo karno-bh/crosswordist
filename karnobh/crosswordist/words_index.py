@@ -7,13 +7,9 @@ import logging
 
 from karnobh.crosswordist.bitmap import (CompressedBitmap2, bool_to_byte_bits_seq, bit_index2,
                                          bit_op_index3, bit_op_index2)
-from crosswordist_native_index.compressed_seq import bit_index_native, bit_and_op_index_native
 
 logger = logging.getLogger(__name__)
 
-_GET_LIST = 0
-_GET_COUNT = 1
-_DOES_EXIST = 2
 
 class WordsIndexWrongLen(Exception):
     pass
@@ -84,11 +80,7 @@ class WordsIndexSameLen:
             self._bitmap_index.append(letter_index)
 
     def bitmap_on_position(self, letter_index, letter):
-        try:
-            return self._bitmap_index[letter_index][letter]
-        except:
-            print(f"letter index: {letter_index}, letter {letter}")
-            raise
+        return self._bitmap_index[letter_index][letter]
 
     def word_at(self, word_index):
         return self._words[word_index]
@@ -213,43 +205,27 @@ class WordsIndex:
         word_index['range'] = [self._length_range.start, self._length_range.stop]
         json.dump(word_index, file, indent=2)
 
-    def lookup(self, length, mapping, op=None):
+    def _perform_lookup(self, length, mapping, op=None):
         if op is None:
             op = operator.and_
         words_index_same_len = self.word_index_by_length(length)
         byte_sequences = [words_index_same_len.bitmap_on_position(pos, letter) for pos, letter in mapping.items()]
         arr_index_stream = bit_op_index2(*byte_sequences, op=op)\
             if len(byte_sequences) != 1 else bit_index2(byte_sequences[0])
-        for arr_index in arr_index_stream:
-            yield words_index_same_len._words[arr_index]
-
-    def _perform_native_lookup(self, length, mapping, lookup_type):
-        words_index_same_len = self.word_index_by_length(length)
-        max_alloc = len(words_index_same_len.words)
-        byte_sequences = [words_index_same_len.bitmap_on_position(pos, letter).compressed_sequence
-                          for pos, letter in mapping.items()]
-        # print(byte_sequences)
-        arr_index_stream = bit_and_op_index_native(byte_sequences, max_alloc, lookup_type) \
-            if len(byte_sequences) != 1 else bit_index_native(byte_sequences[0], max_alloc,
-                                                              lookup_type)
         return arr_index_stream, words_index_same_len
 
-    def lookup_native(self, length, mapping):
-        arr_index_stream, words_index_same_len = self._perform_native_lookup(length, mapping, _GET_LIST)
-        # print("length", length)
-        # print("mapping", mapping)
-        # print("arr_index_stream", arr_index_stream)
+    def lookup(self, length, mapping, op=None):
+        arr_index_stream, words_index_same_len = self._perform_lookup(length, mapping, op)
         for arr_index in arr_index_stream:
             yield words_index_same_len._words[arr_index]
-        # return [words_index_same_len._words[arr_index] for arr_index in arr_index_stream]
 
-    def count_occurrences_native(self, length, mapping):
-        occurrences, _ = self._perform_native_lookup(length, mapping, _GET_COUNT)
-        return occurrences
+    def count_occurrences(self, length, mapping, op=None):
+        arr_index_stream, _ = self._perform_lookup(length, mapping, op)
+        return sum(1 for _ in arr_index_stream)
 
-    def does_intersection_exist(self, length, mapping):
-        exists, _ = self._perform_native_lookup(length, mapping, _DOES_EXIST)
-        return exists
+    def does_intersection_exist(self, length, mapping, op=None):
+        arr_index_stream, _ = self._perform_lookup(length, mapping, op)
+        return any(True for _ in arr_index_stream)
 
     @staticmethod
     @contextmanager
