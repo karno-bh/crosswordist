@@ -39,7 +39,6 @@ def test_run():
         t0 = time.time()
         sol = find_solution(word_index=wi_loaded,
                             cross_words_index=cross_words_index,
-                            orig_grid=grid,
                             timeout_after_seconds=5)
         sol_results = {
             FinderResult.FOUND: "Found",

@@ -165,7 +165,7 @@ class WordIndexTestCase(unittest.TestCase):
                 filter_set = {k: random.choice(abc) for k in actual_letter_indexes}
                 # print(filter_set)
                 t0 = time.time()
-                index_words = list(words_index.lookup_native(word_length, mapping=filter_set))
+                index_words = list(words_index.lookup(word_length, mapping=filter_set))
                 t1 = time.time()
                 non_index_words = naive_lookup(words_index[word_length].words, mapping=filter_set)
                 t2 = time.time()
@@ -179,25 +179,3 @@ class WordIndexTestCase(unittest.TestCase):
         logger.info("Total index time: %s, total non index time: %s",
                     total_index_time, total_non_index_time)
 
-    # def test_for_debug(self):
-    #     with pkg_res.open_text(self.assets_package, self.index_file) as f:
-    #         words_index = WordsIndex(file=f)
-    #
-    #     filter_set = {4: 'E', 1: 'D'}
-    #     word_length = 5
-    #     index_words = list(words_index.lookup(word_length, mapping=filter_set))
-    #     non_index_words = naive_lookup(words_index[word_length], mapping=filter_set)
-    #     print("index words: ", index_words)
-    #     print("non index words: ", non_index_words)
-    #     self.assertEqual(index_words, non_index_words)
-    #
-    # def test_for_debug2(self):
-    #     with pkg_res.open_text(self.assets_package, self.index_file) as f:
-    #         words_index = WordsIndex(file=f)
-    #     filter_set = {1: 'C'}
-    #     word_length = 5
-    #     index_words = list(words_index.lookup(word_length, mapping=filter_set))
-    #     non_index_words = naive_lookup(words_index[word_length], mapping=filter_set)
-    #     print("index words: ", index_words)
-    #     print("non index words: ", non_index_words)
-    #     self.assertEqual(set(index_words), set(non_index_words))
