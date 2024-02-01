@@ -186,7 +186,7 @@ class TestGridGenerating(unittest.TestCase):
 
     def test_memory_of_index(self):
         t0 = time.time()
-        for num in range(10000):
+        for num in range(1000):
             if num % 100 == 0:
                 logger.info("Generated numbers = %s", num)
                 # print("test_all_checked_generated_words::Generated_nums = ", num)

@@ -5,17 +5,17 @@ import random
 from karnobh.crosswordist.affine_2d import (FlatMatrix, point, translate, rotate, scale, identity,
                                             WrongMatrixDimension)
 from karnobh.crosswordist.grid_generator import (create_random_grid, get_all_checked_words_layout,
-                                                 create_cross_words_index, WordDirection)
+                                                 create_cross_words_index, WordDirection, CrossWordsIndex)
 from karnobh.crosswordist.words_index import (WordsIndexSameLen, WordsIndexWrongLen,
                                               NotSupportTypeItem, WordsIndex)
-from karnobh.crosswordist.solution_finder import find_solution, as_flat_matrix, FinderResult
+from karnobh.crosswordist.solution_finder import find_solution, FinderResult
 
 import sys
 
 
 def test_run():
     # random.seed(1)
-    native_mode = False
+    native_mode = True
     with open('/tmp/words_tests/index.json') as f:
         if native_mode:
             from karnobh.crosswordist.word_index_native import WordIndexNative
@@ -32,9 +32,10 @@ def test_run():
         symmetry = random.choice(["X", "NO"])
         grid = create_random_grid(grid_size, symmetry="X")
         print("grid: \n", grid.pretty_log({0: "□", 1: "■"}))
-        words_layout = get_all_checked_words_layout(grid)
-        cross_words_index = create_cross_words_index(words_layout, grid)
-        print(cross_words_index)
+        # words_layout = get_all_checked_words_layout(grid)
+        # cross_words_index = create_cross_words_index(words_layout, grid)
+        # print(cross_words_index)
+        cross_words_index = CrossWordsIndex(grid=grid)
         t0 = time.time()
         sol = find_solution(word_index=wi_loaded,
                             cross_words_index=cross_words_index,
@@ -51,7 +52,7 @@ def test_run():
             total_found_secs += solution_secs
         print(f"Solution: {sol_results[sol]} ==> time: {solution_secs} seconds ==>"
               f"found ratio: {found_times / (num + 1)}")
-        print(as_flat_matrix(cross_words_index, grid).pretty_log({0: "■", "": "□"}))
+        print(cross_words_index.letters_matrix.pretty_log({0: "■", "": "□"}))
     if found_times > 0:
         print("Average time per soulution: ", total_found_secs / found_times)
 

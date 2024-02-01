@@ -104,16 +104,6 @@ class WordLayout:
         return self.filled_letters == self.word_len
 
 
-@dataclass
-class CrossWordsIndex:
-    horizontal_words: list[WordLayout]
-    vertical_words: list[WordLayout]
-
-    @property
-    def all(self):
-        return itertools.chain(self.horizontal_words, self.vertical_words)
-
-
 def create_random_grid(size, black_ratio=1 / 6, all_checked=True, symmetry='X',
                        min_word_size=3):
     inc_vectors = [-1 + 0j, 1 + 0j, 0 - 1j, 0 + 1j]
@@ -252,7 +242,78 @@ def create_cross_words_index(words_layout: list[list[tuple]], grid: FlatMatrix):
     # for word in horizontal_words:
     #     print("Horizontal word: ", word)
 
-    return CrossWordsIndex(
-        horizontal_words=horizontal_words,
-        vertical_words=vertical_words
-    )
+    return horizontal_words, vertical_words
+
+
+class CrossWordsIndexError(Exception):
+    pass
+
+
+class CrossWordsIndex:
+
+    def __init__(self, grid: FlatMatrix):
+        super().__init__()
+        self.grid = grid
+        all_checked_words_layout = self._get_all_checked_words_layout(grid)
+        self.horizontal_words, self.vertical_words = self._create_cross_words_index(
+            all_checked_words_layout,
+            grid
+        )
+
+    @property
+    def grid(self):
+        return self._grid
+
+    @grid.setter
+    def grid(self, grid):
+        if not isinstance(grid, FlatMatrix):
+            raise CrossWordsIndexError(f"Grid should be of type FlatMatrix, got {type(grid)}")
+        self._grid = grid
+
+    @property
+    def horizontal_words(self):
+        return self._horizontal_words
+
+    @horizontal_words.setter
+    def horizontal_words(self, horizontal_words):
+        if not isinstance(horizontal_words, list):
+            raise CrossWordsIndexError(f"Horizontal words should be a list, got {type(horizontal_words)}")
+        self._horizontal_words = horizontal_words
+
+    @property
+    def vertical_words(self):
+        return self._vertical_words
+
+    @vertical_words.setter
+    def vertical_words(self, vertical_words):
+        if not isinstance(vertical_words, list):
+            raise CrossWordsIndexError(f"Horizontal words should be a list, got {type(vertical_words)}")
+        self._vertical_words = vertical_words
+
+    def _get_all_checked_words_layout(self, grid: FlatMatrix) -> list[list[tuple]]:
+        return get_all_checked_words_layout(grid)
+
+    def _create_cross_words_index(self,
+                                 words_layout: list[list[tuple]],
+                                 grid: FlatMatrix) -> tuple[list[WordLayout], list[WordLayout]]:
+        return create_cross_words_index(words_layout, grid)
+
+    @property
+    def letters_matrix(self) -> FlatMatrix:
+        width, height = self.grid.size
+        res = FlatMatrix(width=width, height=height)
+        for word_layout in itertools.chain(self._horizontal_words,
+                                           self._vertical_words):
+            if word_layout.direction == WordDirection.VERTICAL:
+                for y in range(word_layout.y_init, word_layout.y_init + word_layout.word_len):
+                    res.set(word_layout.x_init, y, val=word_layout.word_letters[y - word_layout.y_init],
+                            clone=False)
+            elif word_layout.direction == WordDirection.HORIZONTAL:
+                for x in range(word_layout.x_init, word_layout.x_init + word_layout.word_len):
+                    res.set(x, word_layout.y_init, val=word_layout.word_letters[x - word_layout.x_init],
+                            clone=False)
+        return res
+
+    @property
+    def all(self):
+        return itertools.chain(self.horizontal_words, self.vertical_words)

@@ -14,20 +14,20 @@ class FinderResult(Enum):
     TIMED_OUT = 2
 
 
-def as_flat_matrix(cross_words_index: CrossWordsIndex, orig_grid: FlatMatrix) -> FlatMatrix:
-    width, height = orig_grid.size
-    res = FlatMatrix(width=width, height=height)
-    for word_layout in itertools.chain(cross_words_index.horizontal_words,
-                                       cross_words_index.vertical_words):
-        if word_layout.direction == WordDirection.VERTICAL:
-            for y in range(word_layout.y_init, word_layout.y_init + word_layout.word_len):
-                res.set(word_layout.x_init, y, val=word_layout.word_letters[y - word_layout.y_init],
-                        clone=False)
-        elif word_layout.direction == WordDirection.HORIZONTAL:
-            for x in range(word_layout.x_init, word_layout.x_init + word_layout.word_len):
-                res.set(x, word_layout.y_init, val=word_layout.word_letters[x - word_layout.x_init],
-                        clone=False)
-    return res
+# def as_flat_matrix(cross_words_index: CrossWordsIndex, orig_grid: FlatMatrix) -> FlatMatrix:
+#     width, height = orig_grid.size
+#     res = FlatMatrix(width=width, height=height)
+#     for word_layout in itertools.chain(cross_words_index.horizontal_words,
+#                                        cross_words_index.vertical_words):
+#         if word_layout.direction == WordDirection.VERTICAL:
+#             for y in range(word_layout.y_init, word_layout.y_init + word_layout.word_len):
+#                 res.set(word_layout.x_init, y, val=word_layout.word_letters[y - word_layout.y_init],
+#                         clone=False)
+#         elif word_layout.direction == WordDirection.HORIZONTAL:
+#             for x in range(word_layout.x_init, word_layout.x_init + word_layout.word_len):
+#                 res.set(x, word_layout.y_init, val=word_layout.word_letters[x - word_layout.x_init],
+#                         clone=False)
+#     return res
 
 
 def _find_solution(word_index: WordsIndex,
@@ -77,7 +77,6 @@ def _find_solution(word_index: WordsIndex,
 
 def _get_words_from_index(word_layout: WordLayout, word_index: WordsIndex):
     if word_layout.filled_letters:
-        # func = word_index.lookup_native if native_mode else word_index.lookup
         return list(word_index.lookup(
             length=word_layout.word_len,
             mapping=word_layout.mapping
@@ -88,7 +87,6 @@ def _get_words_from_index(word_layout: WordLayout, word_index: WordsIndex):
 
 def _check_possibilities(word_layout: WordLayout, word_index: WordsIndex):
     if word_layout.filled_letters:
-        # func = word_index.count_occurrences_native if native_mode else word_index.count_occurrences
         return word_index.count_occurrences(
             length=word_layout.word_len,
             mapping=word_layout.mapping
@@ -99,7 +97,6 @@ def _check_possibilities(word_layout: WordLayout, word_index: WordsIndex):
 
 def _has_possibility(word_layout: WordLayout, word_index: WordsIndex):
     if word_layout.filled_letters:
-        # func = word_index.does_intersection_exist_native if native_mode else word_index.does_intersection_exist
         return word_index.does_intersection_exist(
             length=word_layout.word_len,
             mapping=word_layout.mapping
@@ -131,3 +128,7 @@ def find_solution(word_index: WordsIndex,
                           path,
                           time.time(),
                           timeout_after_seconds)
+
+
+class SolutionFinder:
+    pass
