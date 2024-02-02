@@ -36,11 +36,6 @@ class FlatMatrix:
             new_state[self.__idx(i, j)] = val
             return FlatMatrix(self._width, self._height, new_state)
         self._data[self.__idx(i, j)] = val
-        # try:
-        #     if self._data[self.__idx(7, 7)] == 1:
-        #         print("Here!!!")
-        # except:
-        #     pass
         return self
 
     def out_of_range(self, i, j):

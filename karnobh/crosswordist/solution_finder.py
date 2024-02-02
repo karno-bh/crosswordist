@@ -60,13 +60,14 @@ def find_solution(word_index: WordsIndex,
         for word_to_check in words_to_check:
             if word_to_check in in_crossword_words:
                 continue
+            # get a copy of the letters
             prev_state = list(current_word.word_letters)
             current_word.set_word(word_to_check)
             words_intersect_not_good = False
             for current_word_intersect in current_word.word_intersects:
                 current_word_intersect_layout, _ = current_word_intersect
                 if not _has_possibility(current_word_intersect_layout, word_index):
-                    current_word.unset_word(prev_state)
+                    current_word.set_word(prev_state)
                     words_intersect_not_good = True
                     break
             if words_intersect_not_good:
@@ -78,7 +79,7 @@ def find_solution(word_index: WordsIndex,
             res = _find_solution(next_word_layout_inner)
             if res == FinderResult.FOUND or res == FinderResult.TIMED_OUT:
                 return res
-            current_word.unset_word(prev_state)
+            current_word.set_word(prev_state)
         if time.time() - start_time > timeout_after_seconds:
             return FinderResult.TIMED_OUT
         return FinderResult.NO_SOLUTION

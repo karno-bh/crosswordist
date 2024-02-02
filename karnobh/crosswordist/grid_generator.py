@@ -21,11 +21,10 @@ class WordLayout:
     word_letters: list[str]
     word_intersects: list[tuple]
     _filled_letters: int
-    _mapping: dict[int, str]
+    _mapping: dict[int, str] | None
     __weakref__: Any
 
     def __init__(self, word_num, direction, x_init, y_init, word_len):
-        # super().__init__()
         self.word_num = word_num
         self.direction = direction
         self.x_init = x_init
@@ -33,8 +32,8 @@ class WordLayout:
         self.word_len = word_len
         self.word_letters = [""] * self.word_len
         self.word_intersects = [()] * self.word_len
-        self._filled_letters = 0
-        self._mapping = {}
+        self._filled_letters = -1
+        self._mapping = None
 
     def __repr__(self):
         word_intersects_repr = []
@@ -48,56 +47,36 @@ class WordLayout:
                 repr_state = ()
             word_intersects_repr.append(repr_state)
 
-        return (f"WordLayout({self.word_num}, {'H' if self.direction == WordDirection.HORIZONTAL else 'V'}, {self.x_init}, "
+        return (f"WordLayout({self.word_num}, "
+                f"{'H' if self.direction == WordDirection.HORIZONTAL else 'V'}, {self.x_init}, "
                 f"{self.y_init}, {self.word_len}, {self.word_letters}, {word_intersects_repr})")
 
-    # def __del__(self):
-    #     for i in range(len(self.word_intersects)):
-    #         self.word_intersects[i] = None
-
-    def set_letter(self, letter: str, index: int, propagate=True):
-        # if len(letter) > 1:
-        #     raise Exception("Letter len cannot be greater than 1")
-        if letter == "" and self.word_letters[index] != "" and self._filled_letters >= 0:
-            self._filled_letters -= 1
-            self.word_letters[index] = letter
-            del self._mapping[index]
-        else:
-            if self.word_letters[index] == "":
-                self.word_letters[index] = letter
-                self._mapping[index] = letter
-                self._filled_letters += 1
-                # if self._filled_letters > self.word_len:
-                #     raise Exception(f"Error in filled letters: {self}, {self.filled_letters}")
-            elif self.word_letters[index] != letter:
-                raise Exception(f"There is already letter '{self.word_letters[index]}' "
-                                f"at index {index}. Trying to set letter '{letter}'. {self}")
+    def _set_letter(self, letter: str, index: int, propagate=True):
+        self._filled_letters = -1
+        self._mapping = None
+        if letter and self.word_letters[index] and letter != self.word_letters[index]:
+            raise Exception(f"There is already letter '{self.word_letters[index]}' "
+                            f"at index {index}. Trying to set letter '{letter}'. {self}")
+        self.word_letters[index] = letter
         if propagate:
             crossing_word_layout, crossing_word_index = self.word_intersects[index]
-            crossing_word_layout.set_letter(letter, crossing_word_index, propagate=False)
+            crossing_word_layout._set_letter(letter, crossing_word_index, propagate=False)
 
     def set_word(self, word):
         for i, l in enumerate(word):
-            self.set_letter(l, i)
-
-    def unset_word(self, prev_state):
-        # print(f"Unset called: {prev_state} === {self}")
-        # for i in range(len(self.word_letters)):
-        #     self.set_letter("", i)
-        for i, l in enumerate(prev_state):
-            if l == '':
-                self.set_letter('', i)
+            self._set_letter(l, i)
 
     @property
     def filled_letters(self):
-        # return self._filled_letters
-        return sum(1 for l in self.word_letters if l != '')
-        # return len(self._mapping)
+        if self._filled_letters == -1:
+            self._filled_letters = sum(1 for l in self.word_letters if l != '')
+        return self._filled_letters
 
     @property
     def mapping(self):
-        return {i: l for i, l in enumerate(self.word_letters) if l}
-        # return self._mapping
+        if self._mapping is None:
+            self._mapping = {i: l for i, l in enumerate(self.word_letters) if l}
+        return self._mapping
 
     @property
     def full(self):
@@ -206,25 +185,17 @@ def create_cross_words_index(words_layout: list[list[tuple]], grid: FlatMatrix):
             else:
                 horizontal_words.append(pos_word_layout_data)
                 horizontal_index[y_init].append(pos_word_layout_data)
-    # print("vertical index = ", vertical_index)
-    # print("horizontal index = ", horizontal_index)
-    # print("vertical words = ", vertical_words)
-    # print("horizontal words = ", horizontal_words)
 
     for vertical_word in vertical_words:
-        # _, x_init, y_init, word_len, word_num = vertical_word
         y_init = vertical_word.y_init
         x_init = vertical_word.x_init
         word_len = vertical_word.word_len
         for y in range(y_init, y_init + word_len):
             horizontal_words_in_y = horizontal_index[y]
             for horizontal_word_in_y in horizontal_words_in_y:
-                # _, hw_i_x, hw_i_y, hw_len, hw_n = horizontal_word_in_y
                 hw_i_x = horizontal_word_in_y.x_init
                 hw_len = horizontal_word_in_y.word_len
                 if hw_i_x <= x_init < hw_i_x + hw_len:
-                    # print(f"Vertical word {vertical_word} intersects {horizontal_word_in_y} "
-                    #       f"at y = {y}, horizontal word pos: {x_init - hw_i_x}")
                     vertical_word_intersect_pos = y - y_init
                     horizontal_word_intersect_pos = x_init - hw_i_x
                     vertical_word.word_intersects[vertical_word_intersect_pos] = (
@@ -236,11 +207,6 @@ def create_cross_words_index(words_layout: list[list[tuple]], grid: FlatMatrix):
                         vertical_word_intersect_pos
                     )
                     break
-    # print("=========================")
-    # for word in vertical_words:
-    #     print("Vertical word: ", word)
-    # for word in horizontal_words:
-    #     print("Horizontal word: ", word)
 
     return horizontal_words, vertical_words
 
@@ -302,8 +268,7 @@ class CrossWordsIndex:
     def letters_matrix(self) -> FlatMatrix:
         width, height = self.grid.size
         res = FlatMatrix(width=width, height=height)
-        for word_layout in itertools.chain(self._horizontal_words,
-                                           self._vertical_words):
+        for word_layout in self.all:
             if word_layout.direction == WordDirection.VERTICAL:
                 for y in range(word_layout.y_init, word_layout.y_init + word_layout.word_len):
                     res.set(word_layout.x_init, y, val=word_layout.word_letters[y - word_layout.y_init],

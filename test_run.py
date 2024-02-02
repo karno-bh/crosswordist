@@ -28,7 +28,7 @@ def test_run():
         # if num % 10 == 0:
             # logger.info("Generated numbers = %s", num)
         print("test_finding_solution_with_generating::Generated_nums = ", num)
-        grid_size = 11
+        grid_size = 15
         symmetry = random.choice(["X", "NO"])
         grid = create_random_grid(grid_size, symmetry="X")
         print("grid: \n", grid.pretty_log({0: "□", 1: "■"}))
