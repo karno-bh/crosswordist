@@ -69,7 +69,7 @@ class WordLayout:
     @property
     def filled_letters(self):
         if self._filled_letters == -1:
-            self._filled_letters = sum(1 for l in self.word_letters if l != '')
+            self._filled_letters = sum(1 for letter in self.word_letters if letter != '')
         return self._filled_letters
 
     @property
@@ -86,7 +86,7 @@ class WordLayout:
 def create_random_grid(size, black_ratio=1 / 6, all_checked=True, symmetry='X',
                        min_word_size=3):
     inc_vectors = [-1 + 0j, 1 + 0j, 0 - 1j, 0 + 1j]
-    transform_mt_90 = translate(size - 1, 0) * ROT_INT_90
+    transform_mt_90: FlatMatrix = translate(size - 1, 0) * ROT_INT_90
     pane = FlatMatrix(size, size)
     max_blacks = int(size * size * black_ratio)
     blacks_num = 0
@@ -136,7 +136,7 @@ def create_random_grid(size, black_ratio=1 / 6, all_checked=True, symmetry='X',
     return pane
 
 
-def get_all_checked_words_layout(grid: FlatMatrix) -> list[list[tuple]]:
+def get_all_checked_words_layout(grid: FlatMatrix) -> list[list[tuple[int, int, int, int]]]:
     width, height = grid.size
     layout = []
     for j in range(height):
@@ -164,9 +164,11 @@ def get_all_checked_words_layout(grid: FlatMatrix) -> list[list[tuple]]:
     return layout
 
 
-def create_cross_words_index(words_layout: list[list[tuple]], grid: FlatMatrix):
+def create_cross_words_index(words_layout: list[list[tuple[int, int, int, int]]],
+                             grid: FlatMatrix) -> tuple[list[WordLayout], list[WordLayout]]:
     width, height = grid.size
-    vertical_index, horizontal_index = [[] for _ in range(width)], [[] for _ in range(height)]
+    vertical_index: list[list[WordLayout]] = [[] for _ in range(width)]
+    horizontal_index: list[list[WordLayout]] = [[] for _ in range(height)]
     vertical_words: list[WordLayout] = []
     horizontal_words: list[WordLayout] = []
     for word_num, word_layout in enumerate(words_layout):
@@ -243,7 +245,8 @@ class CrossWordsIndex:
     @horizontal_words.setter
     def horizontal_words(self, horizontal_words):
         if not isinstance(horizontal_words, list):
-            raise CrossWordsIndexError(f"Horizontal words should be a list, got {type(horizontal_words)}")
+            raise CrossWordsIndexError(f"Horizontal words should be a list, "
+                                       f"got {type(horizontal_words)}")
         self._horizontal_words = horizontal_words
 
     @property
@@ -253,15 +256,17 @@ class CrossWordsIndex:
     @vertical_words.setter
     def vertical_words(self, vertical_words):
         if not isinstance(vertical_words, list):
-            raise CrossWordsIndexError(f"Horizontal words should be a list, got {type(vertical_words)}")
+            raise CrossWordsIndexError(f"Horizontal words should be a list, "
+                                       f"got {type(vertical_words)}")
         self._vertical_words = vertical_words
 
-    def _get_all_checked_words_layout(self, grid: FlatMatrix) -> list[list[tuple]]:
+    def _get_all_checked_words_layout(self,
+                                      grid: FlatMatrix) -> list[list[tuple[int, int, int, int]]]:
         return get_all_checked_words_layout(grid)
 
     def _create_cross_words_index(self,
-                                 words_layout: list[list[tuple]],
-                                 grid: FlatMatrix) -> tuple[list[WordLayout], list[WordLayout]]:
+                                  words_layout: list[list[tuple[int, int, int, int]]],
+                                  grid: FlatMatrix) -> tuple[list[WordLayout], list[WordLayout]]:
         return create_cross_words_index(words_layout, grid)
 
     @property
@@ -271,11 +276,13 @@ class CrossWordsIndex:
         for word_layout in self.all:
             if word_layout.direction == WordDirection.VERTICAL:
                 for y in range(word_layout.y_init, word_layout.y_init + word_layout.word_len):
-                    res.set(word_layout.x_init, y, val=word_layout.word_letters[y - word_layout.y_init],
+                    res.set(word_layout.x_init, y,
+                            val=word_layout.word_letters[y - word_layout.y_init],
                             clone=False)
             elif word_layout.direction == WordDirection.HORIZONTAL:
                 for x in range(word_layout.x_init, word_layout.x_init + word_layout.word_len):
-                    res.set(x, word_layout.y_init, val=word_layout.word_letters[x - word_layout.x_init],
+                    res.set(x, word_layout.y_init,
+                            val=word_layout.word_letters[x - word_layout.x_init],
                             clone=False)
         return res
 
