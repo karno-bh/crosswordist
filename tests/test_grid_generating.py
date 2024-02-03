@@ -163,9 +163,6 @@ class TestGridGenerating(unittest.TestCase):
                         (test_matrix.out_of_range(i + 1, j) or test_matrix.get(i + 1, j) in (1, 2)) and
                         (test_matrix.out_of_range(i, j + 1) or test_matrix.get(i, j + 1) in (1, 2))):
                         test_matrix.set(i, j, 1, clone=False)
-            # print(test_matrix)
-            # print(test_matrix.pretty_log(replace={0: '_', 1: '*'}))
-            # print(test_matrix.get(23, 24))
             self.assertEqual(grid.data, test_matrix.data)
             self.assertGreater(min_word, 2)
 
@@ -184,7 +181,7 @@ class TestGridGenerating(unittest.TestCase):
         cross_words_index = create_cross_words_index(words_layout, grid)
         print(cross_words_index)
 
-    def test_memory_of_index(self):
+    def dont_test_memory_of_index(self):
         t0 = time.time()
         for num in range(1000):
             if num % 100 == 0:

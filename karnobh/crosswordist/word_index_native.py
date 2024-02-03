@@ -15,7 +15,6 @@ class WordIndexNative(WordsIndex):
         max_alloc = len(words_index_same_len.words)
         byte_sequences = [words_index_same_len.bitmap_on_position(pos, letter).compressed_sequence
                           for pos, letter in mapping.items()]
-        # print(byte_sequences)
         arr_index_stream = bit_and_op_index_native(byte_sequences, max_alloc, lookup_type) \
             if len(byte_sequences) != 1 else bit_index_native(byte_sequences[0], max_alloc,
                                                               lookup_type)
@@ -27,12 +26,8 @@ class WordIndexNative(WordsIndex):
             mapping,
             lookup_type=_GET_LIST
         )
-        # print("length", length)
-        # print("mapping", mapping)
-        # print("arr_index_stream", arr_index_stream)
         for arr_index in arr_index_stream:
             yield words_index_same_len._words[arr_index]
-        # return [words_index_same_len._words[arr_index] for arr_index in arr_index_stream]
 
     def count_occurrences(self, length, mapping, op=None):
         occurrences, _ = self._perform_lookup(length, mapping, lookup_type=_GET_COUNT)

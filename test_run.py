@@ -28,7 +28,7 @@ def test_run():
         # if num % 10 == 0:
             # logger.info("Generated numbers = %s", num)
         print("test_finding_solution_with_generating::Generated_nums = ", num)
-        grid_size = 15
+        grid_size = 21
         symmetry = random.choice(["X", "NO"])
         grid = create_random_grid(grid_size, symmetry="X")
         print("grid: \n", grid.pretty_log({0: "□", 1: "■"}))
@@ -39,7 +39,7 @@ def test_run():
         t0 = time.time()
         sol = find_solution(word_index=wi_loaded,
                             cross_words_index=cross_words_index,
-                            timeout_after_seconds=5)
+                            timeout_after_seconds=30)
         sol_results = {
             FinderResult.FOUND: "Found",
             FinderResult.NO_SOLUTION: "Does not exist",

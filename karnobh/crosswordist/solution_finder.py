@@ -73,7 +73,7 @@ def find_solution(word_index: WordsIndex,
             if words_intersect_not_good:
                 continue
             next_word_layout_inner = _min_possible_word_layout_non_full(cross_words_index.all,
-                                                                           word_index)
+                                                                        word_index)
             if next_word_layout_inner is None:
                 return FinderResult.FOUND
             res = _find_solution(next_word_layout_inner)
