@@ -8,10 +8,6 @@ _DOES_EXIST = 2
 
 class WordIndexNative(WordsIndex):
 
-    def __init__(self, alphabet: list[str] | None = None, length_range: range | None = None,
-                 file=None):
-        super().__init__(alphabet, length_range, file)
-
     def _perform_lookup(self, length, mapping, op=None, lookup_type=None):
         words_index_same_len = self.word_index_by_length(length)
         max_alloc = len(words_index_same_len.words)

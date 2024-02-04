@@ -1,18 +1,42 @@
+"""
+The module is responsible for generating crossword's grid in different forms. That is, it contains
+generators for the grid itself as a matrix. It contains auxiliary functions for taking the matrix
+and representing it as a layout of all words in that matrix (i.e., arrays of vertical words and
+horizontal words, where each position is the "number" of the word). Finally, it contains a class
+that represents a given matrix (or grid) as an index of all words crossing each other (i.e., the
+graph of all crossing words; the term index is used here since from the outside one can get access
+to some word by its number and direction)
+"""
 import itertools
 import random
 from dataclasses import dataclass
+from enum import Enum
 import weakref
 from typing import Any
 from karnobh.crosswordist.affine_2d import FlatMatrix, translate, ROT_INT_90, point
 
 
-class WordDirection:
+class WordDirection(Enum):
+    """
+    Enum that represents the direction of the word
+    """
     HORIZONTAL = 0
     VERTICAL = 1
 
 
+class WordLayoutError(Exception):
+    pass
+
+
 @dataclass(slots=True, init=False, repr=False)
 class WordLayout:
+    """
+    Representing a word as a Word Layout. That is, full representation of the cells in the grid for
+    some word. It does not have to be a fully set word, it may be a partially set word. In addition,
+    the instance of a class also has references to all other words that the current word intersect
+    (thus forming a graph). A graph in such representation will form circle references. Thus, the
+    references to other nodes (word layouts) in a graph are weak references.
+    """
     word_num: int
     direction: WordDirection
     x_init: int
@@ -36,6 +60,11 @@ class WordLayout:
         self._mapping = None
 
     def __repr__(self):
+        """
+        The default representation of the "dataclass" is not suitable because it gets into infinite
+        recursion.
+        :return: representation of a word layout
+        """
         word_intersects_repr = []
         for word in self.word_intersects:
             if word:
@@ -52,34 +81,60 @@ class WordLayout:
                 f"{self.y_init}, {self.word_len}, {self.word_letters}, {word_intersects_repr})")
 
     def _set_letter(self, letter: str, index: int, propagate=True):
+        """
+        This method sets (or unsets) the letter in some position of a word. As well, it recursively
+        propagates the set letter to the crossing words. The propagation should happen only once
+        since the for some specific letter at some position there is only two adjacent words.
+        :param letter: The character of a letter to be set
+        :param index: The position of the letter
+        :param propagate: whether to propagate the letter setting or not. External calls should not
+               set this parameter. It is used for recursive calls.
+        :return: None - it internally mutates the state of the current word cells and adjacent.
+        """
         self._filled_letters = -1
         self._mapping = None
         if letter and self.word_letters[index] and letter != self.word_letters[index]:
-            raise Exception(f"There is already letter '{self.word_letters[index]}' "
-                            f"at index {index}. Trying to set letter '{letter}'. {self}")
+            raise WordLayoutError(f"There is already letter '{self.word_letters[index]}' "
+                                  f"at index {index}. "
+                                  f"Trying to set letter '{letter}'. {self}")
         self.word_letters[index] = letter
         if propagate:
             crossing_word_layout, crossing_word_index = self.word_intersects[index]
             crossing_word_layout._set_letter(letter, crossing_word_index, propagate=False)
 
     def set_word(self, word):
-        for i, l in enumerate(word):
-            self._set_letter(l, i)
+        """
+        Set word into current layout. The word length should be of the same length
+        :param word: word to set
+        :return: None - mutates current word and crossing adjacent words
+        """
+        for i, letter in enumerate(word):
+            self._set_letter(letter, i)
 
     @property
-    def filled_letters(self):
+    def filled_letters(self) -> int:
+        """
+        :return: Number of non-empty letters in current word. The value is cached until a letter of
+                 the word changed.
+        """
         if self._filled_letters == -1:
             self._filled_letters = sum(1 for letter in self.word_letters if letter != '')
         return self._filled_letters
 
     @property
-    def mapping(self):
+    def mapping(self) -> dict[int, str]:
+        """
+        :return: Position to letter (i.e., "sparse array") mapping of the word
+        """
         if self._mapping is None:
             self._mapping = {i: l for i, l in enumerate(self.word_letters) if l}
         return self._mapping
 
     @property
-    def full(self):
+    def full(self) -> bool:
+        """
+        :return: Boolean value whether all letters of the word are set
+        """
         return self.filled_letters == self.word_len
 
 
@@ -99,8 +154,8 @@ def create_random_grid(size, black_ratio=1 / 6, all_checked=True, symmetry='X',
             iterations = 0
         regen_points = False
         if symmetry == 'X':
-            points = ([p := point(*[random.randint(0, size - 1) for _ in range(2)])] +
-                      [p := transform_mt_90 * p for _ in range(3)])
+            points = ([pt := point(*[random.randint(0, size - 1) for _ in range(2)])] +
+                      [pt := transform_mt_90 * pt for _ in range(3)])
         elif symmetry == 'NO':
             points = [point(*[random.randint(0, size - 1) for _ in range(2)])]
         else:
@@ -136,7 +191,8 @@ def create_random_grid(size, black_ratio=1 / 6, all_checked=True, symmetry='X',
     return pane
 
 
-def get_all_checked_words_layout(grid: FlatMatrix) -> list[list[tuple[int, int, int, int]]]:
+def get_all_checked_words_layout(
+        grid: FlatMatrix) -> list[list[tuple[WordDirection, int, int, int]]]:
     width, height = grid.size
     layout = []
     for j in range(height):
@@ -164,7 +220,7 @@ def get_all_checked_words_layout(grid: FlatMatrix) -> list[list[tuple[int, int, 
     return layout
 
 
-def create_cross_words_index(words_layout: list[list[tuple[int, int, int, int]]],
+def create_cross_words_index(words_layout: list[list[tuple[WordDirection, int, int, int]]],
                              grid: FlatMatrix) -> tuple[list[WordLayout], list[WordLayout]]:
     width, height = grid.size
     vertical_index: list[list[WordLayout]] = [[] for _ in range(width)]
@@ -192,13 +248,13 @@ def create_cross_words_index(words_layout: list[list[tuple[int, int, int, int]]]
         y_init = vertical_word.y_init
         x_init = vertical_word.x_init
         word_len = vertical_word.word_len
-        for y in range(y_init, y_init + word_len):
-            horizontal_words_in_y = horizontal_index[y]
+        for y_coord in range(y_init, y_init + word_len):
+            horizontal_words_in_y = horizontal_index[y_coord]
             for horizontal_word_in_y in horizontal_words_in_y:
                 hw_i_x = horizontal_word_in_y.x_init
                 hw_len = horizontal_word_in_y.word_len
                 if hw_i_x <= x_init < hw_i_x + hw_len:
-                    vertical_word_intersect_pos = y - y_init
+                    vertical_word_intersect_pos = y_coord - y_init
                     horizontal_word_intersect_pos = x_init - hw_i_x
                     vertical_word.word_intersects[vertical_word_intersect_pos] = (
                         weakref.proxy(horizontal_word_in_y),
@@ -260,12 +316,13 @@ class CrossWordsIndex:
                                        f"got {type(vertical_words)}")
         self._vertical_words = vertical_words
 
-    def _get_all_checked_words_layout(self,
-                                      grid: FlatMatrix) -> list[list[tuple[int, int, int, int]]]:
+    def _get_all_checked_words_layout(
+            self,
+            grid: FlatMatrix) -> list[list[tuple[WordDirection, int, int, int]]]:
         return get_all_checked_words_layout(grid)
 
     def _create_cross_words_index(self,
-                                  words_layout: list[list[tuple[int, int, int, int]]],
+                                  words_layout: list[list[tuple[WordDirection, int, int, int]]],
                                   grid: FlatMatrix) -> tuple[list[WordLayout], list[WordLayout]]:
         return create_cross_words_index(words_layout, grid)
 
@@ -275,9 +332,9 @@ class CrossWordsIndex:
         res = FlatMatrix(width=width, height=height)
         for word_layout in self.all:
             if word_layout.direction == WordDirection.VERTICAL:
-                for y in range(word_layout.y_init, word_layout.y_init + word_layout.word_len):
-                    res.set(word_layout.x_init, y,
-                            val=word_layout.word_letters[y - word_layout.y_init],
+                for y_coord in range(word_layout.y_init, word_layout.y_init + word_layout.word_len):
+                    res.set(word_layout.x_init, y_coord,
+                            val=word_layout.word_letters[y_coord - word_layout.y_init],
                             clone=False)
             elif word_layout.direction == WordDirection.HORIZONTAL:
                 for x in range(word_layout.x_init, word_layout.x_init + word_layout.word_len):
