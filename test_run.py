@@ -1,3 +1,4 @@
+import os.path
 import time
 import random
 # import unittest
@@ -9,8 +10,21 @@ from karnobh.crosswordist.grid_generator import (create_random_grid, get_all_che
 from karnobh.crosswordist.words_index import (WordsIndexSameLen, WordsIndexWrongLen,
                                               NotSupportTypeItem, WordsIndex)
 from karnobh.crosswordist.solution_finder import find_solution, FinderResult
+from karnobh.crosswordist.grid_emitter import draw_crossword
+from karnobh.crosswordist.graphics import SvgGraphicsEmitter
 
 import sys
+
+
+def to_svg(cross_word_index: CrossWordsIndex, size_px, n):
+    file_name = os.path.join("/tmp/tests/", f"result_{n}.svg")
+    print(file_name)
+    with open(file_name, "w") as f:
+        print(f'<svg width="{size_px}" height="{size_px}" xmlns="http://www.w3.org/2000/svg">',
+              file=f)
+        emitter = SvgGraphicsEmitter(f)
+        draw_crossword(cross_word_index, emitter, size_px)
+        print('</svg>', file=f)
 
 
 def test_run():
@@ -28,7 +42,7 @@ def test_run():
         # if num % 10 == 0:
             # logger.info("Generated numbers = %s", num)
         print("test_finding_solution_with_generating::Generated_nums = ", num)
-        grid_size = 11
+        grid_size = 19
         symmetry = random.choice(["X", "NO"])
         grid = create_random_grid(grid_size, symmetry="X")
         print("grid: \n", grid.pretty_log({0: "□", 1: "■"}))
@@ -52,6 +66,7 @@ def test_run():
         print(f"Solution: {sol_results[sol]} ==> time: {solution_secs} seconds ==>"
               f"found ratio: {found_times / (num + 1)}")
         print(cross_words_index.letters_matrix.pretty_log({0: "■", "": "□"}))
+        to_svg(cross_words_index, 800, num)
     if found_times > 0:
         print("Average time per soulution: ", total_found_secs / found_times)
 
