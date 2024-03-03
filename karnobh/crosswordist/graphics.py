@@ -136,8 +136,6 @@ def with_context(func):
         if self.context:
             if self.context.mergeable:
                 emitter_context_vars = vars(emitter.peek_context())
-                if self.context.stroke_width == 0:
-                    print("here")
                 self_context_vars = {k: v for k, v in vars(self.context).items()
                                      if v is not None}
                 merged_context = {

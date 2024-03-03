@@ -9,7 +9,8 @@ import logging
 from karnobh.crosswordist.affine_2d import (FlatMatrix, point, translate, rotate, scale, identity,
                                             WrongMatrixDimension)
 from karnobh.crosswordist.grid_generator import (create_random_grid, get_all_checked_words_layout,
-                                                 create_cross_words_index, WordDirection)
+                                                 create_cross_words_index, WordDirection,
+                                                 GridGenerationError)
 
 logger = logging.getLogger(__name__)
 
@@ -165,6 +166,43 @@ class TestGridGenerating(unittest.TestCase):
                         test_matrix.set(i, j, 1, clone=False)
             self.assertEqual(grid.data, test_matrix.data)
             self.assertGreater(min_word, 2)
+
+    def test_grid_generation_time_out(self):
+        with self.assertRaises(GridGenerationError) as cm:
+            grid_size = 15
+            symmetry = "X"
+            random.seed(1)
+            grid = create_random_grid(
+                grid_size,
+                symmetry=symmetry,
+                black_ratio=1/2,
+                timeout_seconds=2
+            )
+            print(grid)
+        expected_exception_str = "Grid generation timed out after 2 seconds"
+        self.assertEqual(
+            expected_exception_str,
+            str(cm.exception)
+        )
+
+    def test_grid_generation_slash_symmetry(self):
+        grid_size = 7
+        symmetry = "/"
+        random.seed(1)
+        grid = create_random_grid(
+            grid_size,
+            symmetry=symmetry,
+        )
+        expected = [
+            1, 0, 0, 0, 0, 0, 1,
+            0, 0, 0, 0, 0, 0, 1,
+            0, 0, 0, 0, 0, 0, 1,
+            0, 0, 0, 1, 0, 0, 0,
+            1, 0, 0, 0, 0, 0, 0,
+            1, 0, 0, 0, 0, 0, 0,
+            1, 0, 0, 0, 0, 0, 1,
+        ]
+        self.assertEqual(expected, grid.data)
 
     def test_cross_word_index_creation(self):
         grid_data = [1, 1, 0, 0, 0, 0, 1,

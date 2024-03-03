@@ -9,6 +9,7 @@ to some word by its number and direction)
 """
 import itertools
 import random
+import time
 from dataclasses import dataclass
 from enum import Enum
 import weakref
@@ -138,17 +139,26 @@ class WordLayout:
         return self.filled_letters == self.word_len
 
 
+class GridGenerationError(Exception):
+    pass
+
+
 def create_random_grid(size, black_ratio=1 / 6, all_checked=True, symmetry='X',
-                       min_word_size=3):
+                       min_word_size=3, timeout_seconds=3):
     inc_vectors = [-1 + 0j, 1 + 0j, 0 - 1j, 0 + 1j]
     transform_mt_90: FlatMatrix = translate(size - 1, 0) * ROT_INT_90
     pane = FlatMatrix(size, size)
     max_blacks = int(size * size * black_ratio)
+    start_time = time.time()
     blacks_num = 0
     iterations = 0
     while blacks_num <= max_blacks:
         iterations += 1
         if iterations > size ** 3:
+            delta_time = time.time() - start_time
+            if delta_time >= timeout_seconds:
+                raise GridGenerationError(f"Grid generation timed "
+                                          f"out after {timeout_seconds} seconds")
             pane = FlatMatrix(size, size)
             blacks_num = 0
             iterations = 0
@@ -156,10 +166,14 @@ def create_random_grid(size, black_ratio=1 / 6, all_checked=True, symmetry='X',
         if symmetry == 'X':
             points = ([pt := point(*[random.randint(0, size - 1) for _ in range(2)])] +
                       [pt := transform_mt_90 * pt for _ in range(3)])
+        elif symmetry == '/':
+            points = ([pt := point(*[random.randint(0, size - 1) for _ in range(2)])] +
+                      [pt := transform_mt_90 * pt for _ in range(2)])
+            del points[1]
         elif symmetry == 'NO':
             points = [point(*[random.randint(0, size - 1) for _ in range(2)])]
         else:
-            raise Exception(f"Symmetry {symmetry} is not supported")
+            raise GridGenerationError(f"Symmetry {symmetry} is not supported")
         for x, y, *_ in points:
             if pane.get(x, y) != 0:
                 regen_points = True
@@ -183,7 +197,7 @@ def create_random_grid(size, black_ratio=1 / 6, all_checked=True, symmetry='X',
                         regen_points = True
                         break
             else:
-                raise Exception("all_checked=False not supported")
+                raise GridGenerationError("all_checked=False not supported")
         if regen_points:
             for x, y, *_ in points:
                 pane.set(x, y, 0, clone=False)

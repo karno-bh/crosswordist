@@ -86,4 +86,3 @@ def draw_crossword(cross_word_index: CrossWordsIndex,
         num.emit(graphics_emitter)
     for letter in letters:
         letter.emit(graphics_emitter)
-
