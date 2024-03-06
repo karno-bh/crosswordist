@@ -185,9 +185,9 @@ class TestGridGenerating(unittest.TestCase):
             str(cm.exception)
         )
 
-    def test_grid_generation_slash_symmetry(self):
+    def test_grid_generation_diagonal_symmetry(self):
         grid_size = 7
-        symmetry = "/"
+        symmetry = "D"
         random.seed(1)
         grid = create_random_grid(
             grid_size,

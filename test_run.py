@@ -43,7 +43,7 @@ def test_run():
         print("test_finding_solution_with_generating::Generated_nums = ", num)
         grid_size = 17
         symmetry = random.choice(["X", "NO"])
-        grid = create_random_grid(grid_size, symmetry="/")
+        grid = create_random_grid(grid_size, symmetry="D")
         print("grid: \n", grid.pretty_log({0: "□", 1: "■"}))
         # words_layout = get_all_checked_words_layout(grid)
         # cross_words_index = create_cross_words_index(words_layout, grid)

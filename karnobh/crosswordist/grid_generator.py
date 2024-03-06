@@ -166,7 +166,7 @@ def create_random_grid(size, black_ratio=1 / 6, all_checked=True, symmetry='X',
         if symmetry == 'X':
             points = ([pt := point(*[random.randint(0, size - 1) for _ in range(2)])] +
                       [pt := transform_mt_90 * pt for _ in range(3)])
-        elif symmetry == '/':
+        elif symmetry == 'D':
             points = ([pt := point(*[random.randint(0, size - 1) for _ in range(2)])] +
                       [pt := transform_mt_90 * pt for _ in range(2)])
             del points[1]
