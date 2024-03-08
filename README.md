@@ -7,7 +7,7 @@ Crosswordist is an application that generates random crosswords.
 Example of a generated crossword.
 
 Generated examples in this document are done by some free found file of the English words. However,
-it seems that are not only English words, but whatever is typed whenever in some text :-). So, I
+it seems that are not only English words, but whatever whenever typed in some text :-). So, I
 don't know if those words either exist or not, valid or invalid. **These words just exist in the
 file of all English words that I have**.
 
@@ -20,13 +20,12 @@ compressed bitmap index by running setup.py in this directory.
 ```shell
 $ python setup.py install
 ```
-**Technical note**, for better isolation run those installations in a separate Python virtual
-environment.
+**Technical note**, for better isolation run installations in a separate Python virtual environment.
 
 The compilation depends on the C runtime installed on your system. If the compilation fails, find
-relevant information how to install prerequisites for how install C runtime for C based Python
-extension compilation. *It is possible to run crossword generation without compilation of C module*
-*you will need to specify that 'slow' index (i.e., written in Python) should be used.*
+relevant information how to install prerequisites of C runtime for C based Python
+extension compilation. *It is possible to run crossword generation without compilation of C module
+you will need to specify that 'slow' index (i.e., written in Python) should be used.*
 
 In the root directory of the repository run install of setup.py for the application itself. Once the
 application is installed you may run it by typing "crosswordist"
@@ -42,8 +41,8 @@ crosswordist: error: the following arguments are required: -i/--index
 To run the application you need to provide an index file (compressed bitmaps by word lengths). This
 index file should be prepared before. Thus, the application runs in two modes. Firstly, the index
 file should be prepared and then this file should be used for crossword generation. For both modes
-index file is mandatory. To prepare an index file you need to have file with words. Words' file
-should be provided by external sources and not included. **Note**, a file of words should be in
+index file is mandatory. To prepare an index file you need to have a file with words. Words' file
+should be provided by external sources and not is included. **Note**, a file of words should be in
 upper case and each word is a line in a file.
 ```shell
 # File names are given for example
