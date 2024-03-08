@@ -177,3 +177,14 @@ second is a CPython C extension.
 to enhance the algorithm to take an arbitrary alphabets and non-english corpus of words. For the
 sake of simplicity only English is used.
 
+### Tested Platforms and Issues
+
+The development was done on my personal AMD64 Linux machine with CPython 3.10.12 installed, so
+naturally such configuration should work for you too.
+
+| Platform    | C Based Index Compilation    | Issues                              |
+|-------------|------------------------------|-------------------------------------|
+| Linux AMD64 | Passed (C Runtime installed) | No issues                           |
+| Windows 10  | Passed (C Runtime installed) | Fast index is not loaded, only slow |
+| maxOS       | Passed (C Runtime installed) | No issues                           |
+
