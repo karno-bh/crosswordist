@@ -11,6 +11,13 @@ it seems that are not only English words, but whatever whenever typed in some te
 don't know if those words either exist or not, valid or invalid. **These words just exist in the
 file of all English words that I have**.
 
+## Background
+
+This project was born as a challenge if it's possible to generate randomly a crossword. The idea is
+pretty simple: given a list of words, a random valid crossword should be generated from the list.
+Since there are many types of crosswords and this project is a kind of challenge american crossword
+type was chosen (american crossword type has much more intersections and words than other types).
+
 ## Getting Started
 
 ### Installation
@@ -139,13 +146,6 @@ T R I G L Y C E R Y L
 ■ A R R Y ■ R A Y E ■
 ...
 ```
-
-## Background
-
-This project was born as a challenge if it's possible to generate randomly a crossword. The idea is
-pretty simple: given a list of words, a random valid crossword should be generated from the list.
-Since there are many types of crosswords and this project is a kind of challenge american crossword
-type was chosen (american crossword type has much more intersections and words than other types).
 
 ### Technical Details for Nerds
 
