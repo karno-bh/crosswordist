@@ -4,11 +4,11 @@ Crosswordist is an application that generates random crosswords.
 
 ![Execution Example](images/crossword_032.svg)
 
-Example of a generated crossword.
+An example of a generated crossword.
 
 Generated examples in this document are done by some free found file of the English words. However,
-it seems that are not only English words, but whatever whenever typed in some text :-). So, I
-don't know if those words either exist or not, valid or invalid. **These words just exist in the
+it seems that there are not only English words, but whatever whenever typed somewhere :-). So, I
+don't know if these words either exist or not, valid or invalid. **These words just exist in the
 file of all English words that I have**.
 
 ## Background
@@ -58,7 +58,7 @@ $ crosswordist --mode index --words-file ~/Download/words_upper.txt --index /tmp
 ```
 **Technical note**, the separation of index creation and its usage is mainly driven by the fact that
 index preparation takes a time while written in Python. Interesting, that while profiling the most
-slow space is converting stream of booleans to bytes. On the other hand this operation should be
+slow space is a converting stream of booleans to bytes. On the other hand this operation should be
 performed (almost) only once and thus instead of struggling with performance index preparation moved
 out as a separate step. The expressiveness and readability of Python counts more than converting
 one file with static data to another even if it takes half a minute.
@@ -182,9 +182,9 @@ sake of simplicity only English is used.
 The development was done on my personal AMD64 Linux machine with CPython 3.10.12 installed, so
 naturally such configuration should work for you too.
 
-| Platform    | C Based Index Compilation    | Issues                              |
-|-------------|------------------------------|-------------------------------------|
-| Linux AMD64 | Passed (C Runtime installed) | No issues                           |
-| Windows 10  | Passed (C Runtime installed) | Fast index is not loaded, only slow |
-| maxOS       | Passed (C Runtime installed) | No issues                           |
+| Platform    | C Based Index Compilation | Issues                              |
+|-------------|---------------------------|-------------------------------------|
+| Linux AMD64 | Passed                    | No issues                           |
+| Windows 10  | Passed                    | Fast index is not loaded, only slow |
+| maxOS       | Passed                    | No issues                           |
 
