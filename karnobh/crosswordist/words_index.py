@@ -10,6 +10,8 @@ from karnobh.crosswordist.bitmap import (CompressedBitmap2, bool_to_byte_bits_se
 
 logger = logging.getLogger(__name__)
 
+class WordIndexLoadError(Exception):
+    pass
 
 class WordsIndexWrongLen(Exception):
     pass
@@ -131,7 +133,10 @@ class WordsIndex:
             self._length_range: range = length_range
             self._index_constructed = False
         else:
-            words_index = json.load(file)
+            try:
+                words_index = json.load(file)
+            except (Exception, ) as e:
+                raise WordIndexLoadError(f"Cannot load index file: {file.name}") from e
             range_start, range_stop = words_index['range']
             self._length_range = range(range_start, range_stop)
             del words_index['range']
@@ -194,7 +199,10 @@ class WordsIndex:
             index.make_index()
 
     def word_index_by_length(self, length):
-        return self._words_index[length]
+        word_index = self._words_index.get(length)
+        if word_index is None:
+            raise WordsIndexWrongLen(f"There is no index for words of length: {length}")
+        return word_index
 
     def __getitem__(self, item):
         return self.word_index_by_length(item)
